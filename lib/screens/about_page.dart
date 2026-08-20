@@ -139,7 +139,7 @@ class AboutPage extends StatelessWidget {
             // headers remain in the source files.
             Text(
               'Nanoid © 2026 Gab Nikumura · GPL-3.0\n'
-              'Free and open source. Built on the Musify project.',
+              'Free and open source.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),

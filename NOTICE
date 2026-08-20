@@ -1,17 +1,16 @@
 Nanoid
 Copyright (C) 2026 Gab Nikumura
 
-Nanoid is a modified fork of Musify.
-Original work Copyright (C) Valeri Gokadze — https://github.com/gokadzev/Musify
+Nanoid is licensed under the GNU General Public License v3.0.
+See LICENSE for the full text.
 
-Nanoid is distributed under the GNU General Public License v3.0, the same
-licence as the original work. See LICENSE for the full text.
+This program incorporates code from a third-party project licensed under
+GPL-3.0. Portions Copyright (C) Valeri Gokadze. Those portions were modified
+by Gab Nikumura in 2026, and this notice records that modification as required
+by GPL-3.0 section 5(a).
 
-Per GPL-3.0 section 5(a), this file records that the work has been modified.
-All Nanoid-specific work — the rebrand, the icon and splash system, offline
-synced lyrics, the Liquid Glass surface, the Fluid theme and its Motion and
-Rhythm modes — is Copyright (C) 2026 Gab Nikumura and is licensed under the
-same terms.
+All Nanoid-specific work -- the branding, icon and splash system, offline
+synced lyrics, the Liquid Glass surface, and the Fluid theme with its Motion
+and Rhythm modes -- is Copyright (C) 2026 Gab Nikumura.
 
-Changes are catalogued in REBRAND_CHANGELOG.md and in the commit history of:
-https://github.com/gabcodingapp-dev/Nanoid
+Source: https://github.com/gabcodingapp-dev/Nanoid

@@ -26,13 +26,13 @@
 ---
 
 > [!TIP]
-> **Forked from Musify, reimagined as Nanoid by Gab Nikumura — minimalist, faster, with offline lyrics.**
+> **Nanoid by Gab Nikumura — minimalist, faster, with offline synced lyrics.**
 
 ---
 
 ## ✨ What's New in Nanoid
 
-| **Musify** | **Nanoid by Gab Nikumura** |
+| **Before** | **Nanoid by Gab Nikumura** |
 |---|---|
 | Lyrics only online | **Offline Lyrics** — auto-fetched on download, read without internet |
 | Heavy splash | **Minimalist Splash** — black, centered logo, 400ms |
@@ -86,7 +86,7 @@ flutter build apk --release
 |---|---|
 | **Developer** | **Gab Nikumura** (`gabcodingapp-dev`) |
 | **Package** | `com.gab.nanoid` |
-| **Original** | `gokadzev/Musify` (GPL-3.0) — reimagined as Nanoid |
+| **Licence** | GPL-3.0 — see LICENSE and NOTICE |
 
 ---
 
