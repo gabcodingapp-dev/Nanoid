@@ -1,12 +1,12 @@
 /*
  *     Copyright (C) 2026 Valeri Gokadze
  *
- *     Musify is free software: you can redistribute it and/or modify
+ *     Nanoid is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  *
- *     Musify is distributed in the hope that it will be useful,
+ *     Nanoid is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *
- *     For more information about Musify, including how to contribute,
- *     please visit: https://github.com/gokadzev/Musify
+ *     For more information about Nanoid, including how to contribute,
+ *     please visit: https://github.com/gabcodingapp-dev/Nanoid
  */
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
@@ -30,6 +30,7 @@ import 'package:nanoid/main.dart';
 import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/utilities/flutter_bottom_sheet.dart'
     show closeCurrentBottomSheet;
+import 'package:nanoid/widgets/fluid_background.dart';
 import 'package:nanoid/widgets/liquid_glass.dart';
 import 'package:nanoid/widgets/mini_player.dart';
 
@@ -83,7 +84,13 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
               final items = _getNavigationItems(isOfflineMode);
 
               return Scaffold(
-                body: SafeArea(
+                // The Fluid backdrop sits behind everything, so it shows
+                // through the transparent scaffold and any glass chrome.
+                backgroundColor: fluidThemeEnabled.value
+                    ? Colors.transparent
+                    : null,
+                body: _FluidBackdrop(
+                  child: SafeArea(
                   child: Row(
                     children: [
                       if (isLargeScreen)
@@ -139,6 +146,7 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
                       ),
                     ],
                   ),
+                ),
                 ),
                 bottomNavigationBar: !isLargeScreen
                     ? ValueListenableBuilder<bool>(
@@ -300,4 +308,33 @@ class _NavigationItem {
   final IconData selectedIcon;
   final String label;
   final int shellIndex;
+}
+
+/// Paints the Fluid backdrop behind [child] while the Fluid theme is active,
+/// and gets completely out of the way when it is not.
+class _FluidBackdrop extends StatelessWidget {
+  const _FluidBackdrop({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: fluidThemeEnabled,
+      builder: (context, enabled, _) {
+        if (!enabled) return child;
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.surface,
+                child: const FluidBackground(),
+              ),
+            ),
+            child,
+          ],
+        );
+      },
+    );
+  }
 }

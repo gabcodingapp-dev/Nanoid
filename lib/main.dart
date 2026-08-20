@@ -1,12 +1,12 @@
 /*
  *     Copyright (C) 2026 Valeri Gokadze
  *
- *     Musify is free software: you can redistribute it and/or modify
+ *     Nanoid is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  *
- *     Musify is distributed in the hope that it will be useful,
+ *     Nanoid is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *
- *     For more information about Musify, including how to contribute,
- *     please visit: https://github.com/gokadzev/Musify
+ *     For more information about Nanoid, including how to contribute,
+ *     please visit: https://github.com/gabcodingapp-dev/Nanoid
  */
 
 import 'dart:async';
@@ -33,6 +33,7 @@ import 'package:nanoid/extensions/l10n.dart';
 import 'package:nanoid/localization/app_localizations.dart';
 import 'package:nanoid/services/audio_service.dart';
 import 'package:nanoid/services/data_manager.dart';
+import 'package:nanoid/services/fluid_motion_service.dart';
 import 'package:nanoid/services/io_service.dart';
 import 'package:nanoid/services/listening_stats_service.dart';
 import 'package:nanoid/services/logger_service.dart';
@@ -46,6 +47,7 @@ import 'package:nanoid/utilities/flutter_toast.dart';
 import 'package:nanoid/utilities/language_utils.dart';
 import 'package:nanoid/utilities/playlist_utils.dart';
 import 'package:nanoid/utilities/sharing_intent.dart';
+import 'package:nanoid/widgets/nanoid_splash.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
@@ -259,6 +261,10 @@ class _NanoidState extends State<Nanoid> with WidgetsBindingObserver {
             supportedLocales: appSupportedLocales,
             locale: languageSetting,
             routerConfig: NavigationManager.router,
+            // Wraps every route once, at the app root, so the splash plays
+            // over the first real frame rather than as a separate route.
+            builder: (context, child) =>
+                NanoidSplash(child: child ?? const SizedBox.shrink()),
           ),
         );
       },
@@ -297,6 +303,9 @@ Future<void> initialisation() async {
 
     // Init router
     NavigationManager.instance;
+
+    // Start whichever Fluid Beta modes are already enabled.
+    FluidMotionService().initialise();
 
     try {
       // Listen to incoming links while app is running
