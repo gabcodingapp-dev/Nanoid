@@ -915,6 +915,7 @@ class NanoidAudioHandler extends BaseAudioHandler {
     List<Map> songs, {
     bool replace = false,
     int? startIndex,
+    bool userInitiated = false,
   }) async {
     try {
       final manuallyAddedSongs = replace ? _getUnplayedManualSongs() : <Map>[];
@@ -956,13 +957,13 @@ class NanoidAudioHandler extends BaseAudioHandler {
       _updateQueueMediaItems();
 
       if (targetQueueIndex != null) {
-        await _playFromQueue(targetQueueIndex);
+        await _playFromQueue(targetQueueIndex, userInitiated: userInitiated);
       } else if (startIndex != null &&
           startIndex < _queueList.length &&
           !replace) {
-        await _playFromQueue(startIndex);
+        await _playFromQueue(startIndex, userInitiated: userInitiated);
       } else if (replace && _queueList.isNotEmpty) {
-        await _playFromQueue(0);
+        await _playFromQueue(0, userInitiated: userInitiated);
       }
     } catch (e, stackTrace) {
       logger.log(
@@ -1200,26 +1201,45 @@ class NanoidAudioHandler extends BaseAudioHandler {
     }
   }
 
-  Future<void> _playFromQueue(int index) async {
+  /// Loads and plays the queue entry at [index].
+  ///
+  /// [userInitiated] must be true for anything the user directly asked for -
+  /// tapping a track, or picking one out of the queue. Those requests always
+  /// win: they bypass the in-flight and completion guards below and supersede
+  /// whatever load is currently running.
+  ///
+  /// The guards exist to stop the auto-advance path from firing twice on a
+  /// single completion event. They were previously applied to every caller,
+  /// so if a song ended while its successor was still loading, every tap the
+  /// user made was silently dropped until that load finished - which is why
+  /// picking a new track appeared to "wait for the current song to end".
+  Future<void> _playFromQueue(int index, {bool userInitiated = false}) async {
     if (index < 0 || index >= _queueList.length) {
       logger.log('Invalid queue index: $index');
       return;
     }
 
-    // If already loading any song, skip the request
-    // UNLESS we're in the middle of handling a completion event (allow one load attempt)
-    if (_currentLoadingIndex == index && !_completionEventPending) {
-      return;
-    }
+    if (userInitiated) {
+      // Hand control back from the completion handler; the transition counter
+      // bump below makes any in-flight load stale so it aborts cleanly.
+      _completionEventPending = false;
+      _completionHandlerLoadStarted = false;
+    } else {
+      // If already loading any song, skip the request
+      // UNLESS we're in the middle of handling a completion event (allow one load attempt)
+      if (_currentLoadingIndex == index && !_completionEventPending) {
+        return;
+      }
 
-    if (_currentLoadingIndex >= 0 &&
-        _completionEventPending &&
-        !_completionHandlerLoadStarted) {
-      _completionHandlerLoadStarted = true;
-    } else if (_currentLoadingIndex >= 0 &&
-        _completionEventPending &&
-        _completionHandlerLoadStarted) {
-      return;
+      if (_currentLoadingIndex >= 0 &&
+          _completionEventPending &&
+          !_completionHandlerLoadStarted) {
+        _completionHandlerLoadStarted = true;
+      } else if (_currentLoadingIndex >= 0 &&
+          _completionEventPending &&
+          _completionHandlerLoadStarted) {
+        return;
+      }
     }
 
     // Start new transition
@@ -2157,6 +2177,7 @@ class NanoidAudioHandler extends BaseAudioHandler {
           List<Map>.from(playlist['list']),
           replace: true,
           startIndex: songIndex,
+          userInitiated: true,
         );
       }
     } catch (e, stackTrace) {
@@ -2352,13 +2373,13 @@ class NanoidAudioHandler extends BaseAudioHandler {
     return ConcatenatingAudioSource(children: children);
   }
 
-  Future<void> skipToSong(int newIndex) async {
+  Future<void> skipToSong(int newIndex, {bool userInitiated = true}) async {
     try {
       if (newIndex < 0 || newIndex >= _queueList.length) {
         logger.log('Invalid song index: $newIndex');
         return;
       }
-      await _playFromQueue(newIndex);
+      await _playFromQueue(newIndex, userInitiated: userInitiated);
     } catch (e, stackTrace) {
       logger.log('Error skipping to song', error: e, stackTrace: stackTrace);
     }
