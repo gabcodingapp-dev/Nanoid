@@ -1,12 +1,12 @@
 /*
  *     Copyright (C) 2026 Valeri Gokadze
  *
- *     Musify is free software: you can redistribute it and/or modify
+ *     Nanoid is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  *
- *     Musify is distributed in the hope that it will be useful,
+ *     Nanoid is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *
- *     For more information about Musify, including how to contribute,
- *     please visit: https://github.com/gokadzev/Musify
+ *     For more information about Nanoid, including how to contribute,
+ *     please visit: https://github.com/gabcodingapp-dev/Nanoid
  */
 
 import 'package:audio_service/audio_service.dart';
@@ -138,10 +138,76 @@ class SettingsPage extends StatelessWidget {
           ),
         ),
         ValueListenableBuilder<bool>(
+          valueListenable: fluidThemeEnabled,
+          builder: (_, value, __) => CustomBar(
+            'Fluid Theme (Exclusive)',
+            FluentIcons.drop_24_filled,
+            description:
+                'Strict black and white, with a slow-moving liquid backdrop. '
+                'Overrides accent and dynamic colour.',
+            trailing: Switch(
+              value: value,
+              onChanged: (v) => _toggleFluidTheme(context, v),
+            ),
+          ),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: fluidThemeEnabled,
+          builder: (_, fluidOn, __) {
+            if (!fluidOn) return const SizedBox.shrink();
+            return Column(
+              children: [
+                ValueListenableBuilder<bool>(
+                  valueListenable: fluidGyroEnabled,
+                  builder: (_, value, __) => CustomBar(
+                    'Fluid Motion (Beta)',
+                    FluentIcons.phone_24_regular,
+                    description:
+                        'The backdrop leans as you tilt the device.',
+                    trailing: Switch(
+                      value: value,
+                      onChanged: (v) => _toggleFluidGyro(context, v),
+                    ),
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: fluidRhythmEnabled,
+                  builder: (_, value, __) => CustomBar(
+                    'Fluid Rhythm (Beta)',
+                    FluentIcons.pulse_24_regular,
+                    description:
+                        'The backdrop pulses in time with playback. '
+                        'Tempo-estimated, not true beat detection.',
+                    trailing: Switch(
+                      value: value,
+                      onChanged: (v) => _toggleFluidRhythm(context, v),
+                    ),
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: fluidRhythmEnabled,
+                  builder: (_, rhythmOn, __) {
+                    if (!rhythmOn) return const SizedBox.shrink();
+                    return ValueListenableBuilder<int>(
+                      valueListenable: fluidRhythmBpm,
+                      builder: (_, bpm, __) => CustomBar(
+                        'Rhythm tempo',
+                        FluentIcons.timer_24_regular,
+                        description: '$bpm BPM',
+                        onTap: () => _showBpmPicker(context),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        ),
+        ValueListenableBuilder<bool>(
           valueListenable: liquidGlassEnabled,
           builder: (_, value, __) => CustomBar(
             'Liquid Glass (Beta)',
-            FluentIcons.drop_24_regular,
+            FluentIcons.sparkle_24_regular,
             description:
                 'Translucent, blurred nav bar and mini player. '
                 'May reduce battery life on older devices.',
@@ -671,6 +737,64 @@ class SettingsPage extends StatelessWidget {
       useSystemColor: value,
     );
     showToast(context, context.l10n!.settingChangedMsg);
+  }
+
+  void _toggleFluidTheme(BuildContext context, bool value) {
+    addOrUpdateData<bool>('settings', 'fluidThemeEnabled', value);
+    fluidThemeEnabled.value = value;
+    if (!value) {
+      // Motion and Rhythm only make sense with the backdrop on screen.
+      _setFluidGyro(false);
+      _setFluidRhythm(false);
+    }
+    Nanoid.updateAppState(context);
+    showToast(context, context.l10n!.settingChangedMsg);
+  }
+
+  void _setFluidGyro(bool value) {
+    addOrUpdateData<bool>('settings', 'fluidGyroEnabled', value);
+    fluidGyroEnabled.value = value;
+  }
+
+  void _setFluidRhythm(bool value) {
+    addOrUpdateData<bool>('settings', 'fluidRhythmEnabled', value);
+    fluidRhythmEnabled.value = value;
+  }
+
+  void _toggleFluidGyro(BuildContext context, bool value) {
+    _setFluidGyro(value);
+    showToast(context, context.l10n!.settingChangedMsg);
+  }
+
+  void _toggleFluidRhythm(BuildContext context, bool value) {
+    _setFluidRhythm(value);
+    showToast(context, context.l10n!.settingChangedMsg);
+  }
+
+  void _showBpmPicker(BuildContext context) {
+    const options = [60, 80, 90, 100, 110, 120, 128, 140, 160, 174];
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (final bpm in options)
+              ListTile(
+                title: Text('$bpm BPM'),
+                trailing: fluidRhythmBpm.value == bpm
+                    ? const Icon(FluentIcons.checkmark_24_filled)
+                    : null,
+                onTap: () {
+                  addOrUpdateData<int>('settings', 'fluidRhythmBpm', bpm);
+                  fluidRhythmBpm.value = bpm;
+                  Navigator.pop(sheetContext);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _toggleLiquidGlass(BuildContext context, bool value) {
