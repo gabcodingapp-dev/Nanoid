@@ -162,6 +162,35 @@ Status legend: `M` modified, `A` added, `D` deleted, `R` renamed.
 - README lines crediting the Musify fork origin.
 - `dev.flutter.flutter-gradle-plugin` / `dev.flutter.flutter-plugin-loader` Gradle plugin IDs - these are Flutter's own namespace, not the brand.
 
+## Round 2 - de-branding, Liquid Glass, home & splash
+
+- **About screen**: upstream author card (photo, name, personal links) removed.
+  Replaced with Source code / Releases / Report an issue, all pointing at
+  `gabcodingapp-dev/Nanoid`.
+- **Sponsor removed**: the Settings "Become a sponsor" card (Ko-fi -> upstream
+  author) is gone, and `.github/FUNDING.yml` no longer routes the repo Sponsor
+  button to them.
+- **Version**: `10.3.1` -> `1.0.0`. The fork was reporting upstream's version.
+- **Liquid Glass (Beta)**: `lib/widgets/liquid_glass.dart`, opt-in via
+  Settings. Applied to the nav bar and mini player.
+- **Home**: new "Recently played" section (max 5, hidden when empty) with a
+  play-all action; fixed a nested-scroll conflict in the recommended list.
+- **Splash**: two-part exit - the mark eases up and scales down, then the
+  backdrop fades a beat later.
+
+### Why the GPL headers still say "Musify"
+
+The 420 licence-header lines in `lib/**/*.dart` and the `LICENSE` file are
+**not** removable. GPL-3.0 section 5 requires modified works to keep existing
+copyright notices and the licence intact; stripping them would make
+distribution a licence violation and expose the repo to a takedown.
+
+What is *not* required is in-app credit to the original author - which is why
+the About card, the sponsor link and the personal URLs could all go. The
+remaining attribution is one small line on the About screen plus the standard
+Licenses screen, which is the minimum GPL section 5(a) expects from a modified
+fork.
+
 ## Flagged for owner decision
 
 1. **`applicationId` changed to `com.gab.nanoid`.** Android treats this as a brand-new app: existing Musify installs will not update in place and will not see their previous library/playlist data. Confirmed as intended.
