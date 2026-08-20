@@ -15,8 +15,6 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import 'dart:math' as math;
-
 import 'package:material_ui/material_ui.dart';
 
 /// In-app splash, shown over the first frame.
@@ -94,7 +92,6 @@ class _NanoidSplashState extends State<NanoidSplash>
   Widget build(BuildContext context) {
     if (_done) return widget.child;
 
-    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final background = isDark ? const Color(0xFF0B0B0F) : Colors.white;
     final markColor = isDark ? Colors.white : const Color(0xFF111111);
@@ -118,15 +115,26 @@ class _NanoidSplashState extends State<NanoidSplash>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          SizedBox(
-                            width: 104,
-                            height: 104,
-                            child: CustomPaint(
-                              painter: _MarkPainter(
-                                progress: _ring.value,
-                                spindle: _spindle.value.clamp(0.0, 1.0),
-                                markColor: markColor,
-                                accent: colorScheme.primary,
+                          Transform.rotate(
+                            // A slow unwind into place; the mark is a swirl,
+                            // so rotation is the motion it already implies.
+                            angle: (1 - _ring.value) * 0.9,
+                            child: Transform.scale(
+                              scale: 0.72 + (0.28 * _spindle.value.clamp(0.0, 1.0)),
+                              child: Opacity(
+                                opacity: _ring.value,
+                                child: ColorFiltered(
+                                  colorFilter: ColorFilter.mode(
+                                    markColor,
+                                    BlendMode.srcIn,
+                                  ),
+                                  child: Image.asset(
+                                    'assets/branding/nanoid_mark.png',
+                                    width: 118,
+                                    height: 118,
+                                    filterQuality: FilterQuality.medium,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -158,78 +166,4 @@ class _NanoidSplashState extends State<NanoidSplash>
       ],
     );
   }
-}
-
-/// Draws the Nanoid "g" progressively: bowl arc, then stem, then tail.
-class _MarkPainter extends CustomPainter {
-  const _MarkPainter({
-    required this.progress,
-    required this.spindle,
-    required this.markColor,
-    required this.accent,
-  });
-
-  final double progress;
-  final double spindle;
-  final Color markColor;
-  final Color accent;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Geometry matches assets/branding/icon_foreground.svg (108 unit space).
-    final scale = size.width / 108;
-    final stroke = 8.5 * scale;
-    final centre = Offset(54 * scale, 42 * scale);
-    final radius = 15 * scale;
-
-    final paint = Paint()
-      ..color = markColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-
-    // 0.0-0.7 of progress draws the bowl, 0.7-1.0 draws stem + tail.
-    final bowlT = (progress / 0.7).clamp(0.0, 1.0);
-    canvas.drawArc(
-      Rect.fromCircle(center: centre, radius: radius),
-      -math.pi / 2,
-      2 * math.pi * bowlT,
-      false,
-      paint,
-    );
-
-    if (progress > 0.7) {
-      final tailT = ((progress - 0.7) / 0.3).clamp(0.0, 1.0);
-      final stemX = 69 * scale;
-      final path = Path()..moveTo(stemX, 42 * scale);
-      path.lineTo(stemX, (42 + (28 * tailT)) * scale);
-      if (tailT > 0.6) {
-        final hook = ((tailT - 0.6) / 0.4).clamp(0.0, 1.0);
-        path.cubicTo(
-          stemX,
-          79 * scale,
-          (69 - (8 * hook)) * scale,
-          82 * scale,
-          (69 - (19 * hook)) * scale,
-          (70 + (8.5 * hook)) * scale,
-        );
-      }
-      canvas.drawPath(path, paint);
-    }
-
-    if (spindle > 0) {
-      canvas.drawCircle(
-        centre,
-        4.2 * scale * spindle,
-        Paint()..color = accent,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_MarkPainter old) =>
-      old.progress != progress ||
-      old.spindle != spindle ||
-      old.markColor != markColor ||
-      old.accent != accent;
 }

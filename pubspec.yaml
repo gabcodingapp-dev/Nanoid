@@ -55,7 +55,8 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/licenses/
-    - assets/icons/musify_icon.png
+    - assets/icons/nanoid_icon.png
+    - assets/branding/nanoid_mark.png
 
   fonts:
     - family: paytoneOne

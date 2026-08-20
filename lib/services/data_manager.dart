@@ -382,7 +382,7 @@ Future<Uint8List> _readPickedFile(PlatformFile file) async {
 
 Future<void> _validateHiveBytes(String boxName, Uint8List bytes) async {
   final validationDirectory = await Directory.systemTemp.createTemp(
-    'musify_restore_',
+    'nanoid_restore_',
   );
   try {
     final validationFile = File('${validationDirectory.path}/$boxName.hive');

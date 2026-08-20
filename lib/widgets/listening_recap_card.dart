@@ -24,7 +24,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:nanoid/extensions/l10n.dart';
 import 'package:nanoid/widgets/song_bar.dart';
 
-const _musifyIconAsset = 'assets/icons/musify_icon.png';
+const _nanoidIconAsset = 'assets/icons/nanoid_icon.png';
 
 class ListeningRecapCard extends StatelessWidget {
   const ListeningRecapCard({
@@ -154,7 +154,7 @@ class _RecapBrandHeader extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ImageIcon(
-                      const AssetImage(_musifyIconAsset),
+                      const AssetImage(_nanoidIconAsset),
                       size: 16,
                       color: colorScheme.onSecondaryContainer,
                     ),

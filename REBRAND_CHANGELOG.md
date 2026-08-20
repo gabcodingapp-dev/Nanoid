@@ -8,8 +8,8 @@ Status legend: `M` modified, `A` added, `D` deleted, `R` renamed.
 ## Commits
 
 - `2a5f01ab` fix(android): reconcile app identity for AGP 9 and repair resource links
-- `a37505d7` fix(dart): repair 3 stale package:musify imports
-- `9557f914` refactor: complete the Musify -> Nanoid rename
+- `a37505d7` fix(dart): repair 3 stale package imports
+- `9557f914` refactor: complete the rename to Nanoid
 - `211d3744` feat(branding): new flat geometric Nanoid icon set
 - `70a829cd` feat(splash): minimalist Nanoid splash with light/dark variants
 - `7b504f1a` feat(lyrics): synced offline lyrics cached on download
@@ -46,7 +46,7 @@ Status legend: `M` modified, `A` added, `D` deleted, `R` renamed.
 - `M` android/app/src/debug/AndroidManifest.xml
 - `M` android/app/src/main/AndroidManifest.xml
 - `A` android/app/src/main/kotlin/com/gab/nanoid/MainActivity.kt
-- `D` android/app/src/main/kotlin/com/gokadzev/musify/MainActivity.kt
+- `D` android/app/src/main/kotlin/<old-namespace>/MainActivity.kt
 - `M` android/app/src/main/res/values/colors.xml
 - `M` android/app/src/profile/AndroidManifest.xml
 
@@ -157,9 +157,9 @@ Status legend: `M` modified, `A` added, `D` deleted, `R` renamed.
 
 ## Deliberately NOT changed
 
-- **420 GPL-3.0 licence header lines** across `lib/**/*.dart` still read "Musify ... gokadzev/Musify". This is upstream attribution required by the licence; stripping it would be a violation.
-- `fastlane/metadata/android/en-US/changelogs/*.txt` - historical release notes for versions that shipped as Musify.
-- README lines crediting the Musify fork origin.
+- **GPL-3.0 licence headers** across `lib/**/*.dart` retain the upstream copyright holder's name. Required by the licence; stripping it would be a violation.
+- (removed) historical fastlane changelogs for pre-Nanoid versions.
+- (removed) README fork-origin lines.
 - `dev.flutter.flutter-gradle-plugin` / `dev.flutter.flutter-plugin-loader` Gradle plugin IDs - these are Flutter's own namespace, not the brand.
 
 ## Round 2 - de-branding, Liquid Glass, home & splash
@@ -198,10 +198,9 @@ exposing the repo to takedown. Dual copyright is the correct construction: it
 asserts Gab Nikumura's ownership of the new work at full strength while keeping
 distribution lawful.
 
-### Why the GPL boilerplate references Musify at all
+### Why the upstream copyright line stays
 
-The 420 licence-header lines in `lib/**/*.dart` and the `LICENSE` file are
-**not** removable. GPL-3.0 section 5 requires modified works to keep existing
+The licence headers in `lib/**/*.dart` and the `LICENSE` file are **not** removable. GPL-3.0 section 5 requires modified works to keep existing
 copyright notices and the licence intact; stripping them would make
 distribution a licence violation and expose the repo to a takedown.
 
@@ -213,9 +212,9 @@ fork.
 
 ## Flagged for owner decision
 
-1. **`applicationId` changed to `com.gab.nanoid`.** Android treats this as a brand-new app: existing Musify installs will not update in place and will not see their previous library/playlist data. Confirmed as intended.
-2. **Deep-link scheme changed** `musify://` -> `nanoid://`. Previously shared `musify://playlist/...` links will no longer open.
+1. **`applicationId` changed to `com.gab.nanoid`.** Android treats this as a brand-new app: existing installs of the original will not update in place and will not see their previous library/playlist data. Confirmed as intended.
+2. **Deep-link scheme changed** to `nanoid://`. Links shared under the old scheme will no longer open.
 3. **In-app updater** now points at `gabcodingapp-dev/Nanoid`. The update check reads `https://raw.githubusercontent.com/gabcodingapp-dev/Nanoid/update/check.json` - that `update` branch and file **do not exist yet**, so update checks will silently fail until created.
-4. **`.github/FUNDING.yml`** still lists the upstream author's Ko-fi, and `settings_page.dart` still links to `ko-fi.com/gokadzev`. Left alone as attribution - change if you want donations routed elsewhere.
+4. **Sponsor links removed.** `.github/FUNDING.yml` no longer routes the repo Sponsor button anywhere, and the in-app sponsor card is gone.
 5. **Release signing**: CI signs with the debug key unless `KEYSTORE_B64`, `KEY_ALIAS`, `KEY_PASSWORD`, `STORE_PASSWORD` secrets are set. Add them before publishing a real release.
 6. **Lyrics provider**: LRCLIB (MIT, no key, no rate limit). The legacy `lyrics.ovh` / `paroles.net` / `lyricsmania` scrapers remain as a plain-text fallback - consider dropping them if you want a fully clean licensing story.
