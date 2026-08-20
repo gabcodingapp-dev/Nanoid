@@ -27,11 +27,17 @@ import 'package:nanoid/extensions/l10n.dart';
 import 'package:nanoid/utilities/url_launcher.dart';
 import 'package:nanoid/widgets/mini_player_bottom_space.dart';
 
+const String nanoidRepoUrl = 'https://github.com/gabcodingapp-dev/Nanoid';
+const String nanoidReleasesUrl = '$nanoidRepoUrl/releases';
+const String nanoidIssuesUrl = '$nanoidRepoUrl/issues';
+
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n!.about)),
       body: SingleChildScrollView(
@@ -46,7 +52,7 @@ class AboutPage extends StatelessWidget {
                   Text(
                     'Nanoid',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: colorScheme.primary,
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'paytoneOne',
@@ -58,7 +64,7 @@ class AboutPage extends StatelessWidget {
                     width: 40,
                     height: 3,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -69,95 +75,65 @@ class AboutPage extends StatelessWidget {
                       vertical: 7,
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      color: colorScheme.secondaryContainer,
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: Text(
                       'v$appVersion',
                       style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSecondaryContainer,
+                        color: colorScheme.onSecondaryContainer,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.2,
                       ),
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Minimalist music, with offline lyrics',
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 32),
-            Material(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(20),
-              clipBehavior: Clip.antiAlias,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: Image.network(
-                        'https://avatars.githubusercontent.com/u/79704324?v=4',
-                        width: 52,
-                        height: 52,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Valeri Gokadze',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'WEB & APP Developer',
-                            style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _SocialButton(
-                          icon: FluentIcons.code_24_filled,
-                          tooltip: 'Github',
-                          onPressed: () {
-                            launchURL(Uri.parse('https://github.com/gokadzev'));
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        _SocialButton(
-                          icon: FluentIcons.globe_24_filled,
-                          tooltip: 'Website',
-                          onPressed: () {
-                            launchURL(Uri.parse('https://gokadzev.github.io'));
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            const SizedBox(height: 30),
+            _LinkTile(
+              icon: FluentIcons.code_24_filled,
+              title: 'Source code',
+              subtitle: 'gabcodingapp-dev/Nanoid',
+              onTap: () => launchURL(Uri.parse(nanoidRepoUrl)),
+            ),
+            const SizedBox(height: 8),
+            _LinkTile(
+              icon: FluentIcons.arrow_download_24_filled,
+              title: 'Releases',
+              subtitle: 'Download the latest build',
+              onTap: () => launchURL(Uri.parse(nanoidReleasesUrl)),
+            ),
+            const SizedBox(height: 8),
+            _LinkTile(
+              icon: FluentIcons.bug_24_filled,
+              title: 'Report an issue',
+              subtitle: 'Bugs and feature requests',
+              onTap: () => launchURL(Uri.parse(nanoidIssuesUrl)),
+            ),
+            const SizedBox(height: 26),
+            // GPL-3.0 requires that modified versions carry a notice stating
+            // they were changed and keep the licence discoverable. This line
+            // plus the Licenses screen satisfies that; the full copyright
+            // headers remain in the source files.
+            Text(
+              'Free and open source · GPL-3.0\n'
+              'A modified fork of the Musify project.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                fontSize: 12,
+                height: 1.5,
               ),
             ),
             const MiniPlayerBottomSpace(),
@@ -168,33 +144,73 @@ class AboutPage extends StatelessWidget {
   }
 }
 
-class _SocialButton extends StatelessWidget {
-  const _SocialButton({
+class _LinkTile extends StatelessWidget {
+  const _LinkTile({
     required this.icon,
-    required this.tooltip,
-    required this.onPressed,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
   });
 
   final IconData icon;
-  final String tooltip;
-  final VoidCallback onPressed;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+
     return Material(
-      color: colorScheme.primaryContainer,
-      borderRadius: BorderRadius.circular(12),
+      color: colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Tooltip(
-          message: tooltip,
-          child: Container(
-            width: 40,
-            height: 40,
-            alignment: Alignment.center,
-            child: Icon(icon, size: 20, color: colorScheme.primary),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 20, color: colorScheme.primary),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                FluentIcons.chevron_right_24_regular,
+                size: 18,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
           ),
         ),
       ),
