@@ -26,7 +26,7 @@
 ---
 
 > [!TIP]
-> **Nanoid by Gab Nikumura — minimalist, faster, with offline synced lyrics.**
+> **Nanoid by Gab — minimalist, faster, with offline synced lyrics.**
 
 ---
 
