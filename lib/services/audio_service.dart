@@ -366,8 +366,16 @@ class NanoidAudioHandler extends BaseAudioHandler {
       // Apply stored shuffle mode to audio player
       await audioPlayer.setShuffleModeEnabled(shuffleNotifier.value);
 
+      // Restore user playback preferences.
+      await audioPlayer.setSpeed(playbackSpeed.value);
+      await setSkipSilence(skipSilenceEnabled.value);
+
       // Initialize equalizer once at startup
       unawaited(_ensureEqualizerConfigured());
+
+      // Rebuild the previous queue, paused, so the user picks up where they
+      // left off without anything starting on its own.
+      unawaited(_restoreSavedQueue());
     } catch (e, stackTrace) {
       logger.log(
         'Error initializing audio session',
@@ -1131,6 +1139,7 @@ class NanoidAudioHandler extends BaseAudioHandler {
   }
 
   void _updateQueueMediaItems() {
+    _scheduleQueuePersist();
     try {
       _queueEntryIds.ensureIds(_queueList);
 
@@ -1394,6 +1403,104 @@ class NanoidAudioHandler extends BaseAudioHandler {
 
   Stream<List<Map>> get queueAsMapStream => _queueMapStream.stream;
   int get currentQueueIndex => _currentQueueIndex;
+
+  /// Immutable snapshot of the queue, for callers that want to persist or
+  /// export it (e.g. "save queue as playlist").
+  List<Map> get queueSongs => List<Map>.unmodifiable(_queueList);
+
+  /// Sets playback speed and remembers it across launches.
+  Future<void> setPlaybackSpeed(double speed) async {
+    final clamped = speed.clamp(0.25, 3.0);
+    playbackSpeed.value = clamped;
+    unawaited(addOrUpdateData<double>('settings', 'playbackSpeed', clamped));
+    try {
+      await audioPlayer.setSpeed(clamped);
+      _updatePlaybackState();
+    } catch (e, stackTrace) {
+      logger.log('Error setting speed', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Toggles ExoPlayer's silence trimming. No-op on platforms without it.
+  Future<void> setSkipSilence(bool enabled) async {
+    skipSilenceEnabled.value = enabled;
+    unawaited(
+      addOrUpdateData<bool>('settings', 'skipSilenceEnabled', enabled),
+    );
+    try {
+      await audioPlayer.setSkipSilenceEnabled(enabled);
+    } catch (e, stackTrace) {
+      logger.log('Skip silence unsupported', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Seeks by [offset] relative to the current position, clamped to the track.
+  Future<void> seekBy(Duration offset) async {
+    final duration = audioPlayer.duration;
+    var target = audioPlayer.position + offset;
+    if (target < Duration.zero) target = Duration.zero;
+    if (duration != null && target > duration) target = duration;
+    await seek(target);
+  }
+
+  // --- queue persistence -------------------------------------------------
+
+  /// Debounced so a burst of queue edits writes once, not once per change.
+  Timer? _queuePersistTimer;
+
+  void _scheduleQueuePersist() {
+    if (!restoreQueueEnabled.value) return;
+    _queuePersistTimer?.cancel();
+    _queuePersistTimer = Timer(const Duration(seconds: 2), _persistQueue);
+  }
+
+  void _persistQueue() {
+    try {
+      // Radio streams are live and cannot be resumed, so they are not saved.
+      final songs = _queueList
+          .where((s) => s['isLive'] != true)
+          .map(cloneMap)
+          .toList();
+      final box = Hive.box('userNoBackup');
+      box.put('savedQueue', songs);
+      box.put('savedQueueIndex', _currentQueueIndex);
+    } catch (e, stackTrace) {
+      logger.log('Error persisting queue', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _restoreSavedQueue() async {
+    if (!restoreQueueEnabled.value) return;
+    try {
+      if (_queueList.isNotEmpty) return;
+
+      final box = Hive.box('userNoBackup');
+      final saved = box.get('savedQueue', defaultValue: []) as List?;
+      if (saved == null || saved.isEmpty) return;
+
+      final index = (box.get('savedQueueIndex', defaultValue: 0) as num).toInt();
+
+      for (final song in saved) {
+        if (song is Map && song['ytid'] != null) {
+          _queueList.add(_queueEntryIds.createSong(Map<String, dynamic>.from(song)));
+        }
+      }
+      if (_queueList.isEmpty) return;
+
+      _currentQueueIndex = index.clamp(0, _queueList.length - 1);
+      _hydrateQueueEntryIds();
+      _updateQueueMediaItems();
+
+      // Surface the track without loading audio: restoring should never start
+      // playback on its own.
+      final current = _queueList[_currentQueueIndex];
+      mediaItem.add(_getMediaItemForQueue(current));
+      _updatePlaybackState();
+    } catch (e, stackTrace) {
+      logger.log('Error restoring queue', error: e, stackTrace: stackTrace);
+    }
+  }
+
   Map? get currentSong =>
       _currentQueueIndex >= 0 && _currentQueueIndex < _queueList.length
       ? _queueList[_currentQueueIndex]

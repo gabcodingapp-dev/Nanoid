@@ -26,9 +26,12 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:nanoid/extensions/l10n.dart';
 import 'package:nanoid/main.dart';
+import 'package:nanoid/services/playlists_manager.dart';
+import 'package:nanoid/utilities/flutter_toast.dart';
 import 'package:nanoid/widgets/confirmation_dialog.dart';
 import 'package:nanoid/widgets/no_artwork_cube.dart';
 
@@ -134,6 +137,58 @@ class _QueueWidgetState extends State<QueueWidget> {
     );
   }
 
+  /// Turns the live queue into a permanent custom playlist.
+  ///
+  /// Useful after building something good with "play next" / shuffle that
+  /// would otherwise be lost the moment the queue is replaced.
+  void _saveQueueAsPlaylist(BuildContext context) {
+    final songs = audioHandler.queueSongs;
+    if (songs.isEmpty) return;
+
+    final controller = TextEditingController(
+      text: 'Queue ${DateFormat('d MMM, HH:mm').format(DateTime.now())}',
+    );
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Save queue as playlist'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Playlist name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.l10n!.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isEmpty) return;
+              Navigator.pop(dialogContext);
+
+              final (_, playlistId) = createCustomPlaylist(
+                name,
+                null,
+                context,
+              );
+              for (final song in songs) {
+                addSongInCustomPlaylist(context, playlistId, song);
+              }
+              showToast(
+                context,
+                '${context.l10n!.addedSuccess}: ${songs.length}',
+              );
+            },
+            child: Text(context.l10n!.add),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmClearQueue(BuildContext context) {
     showDialog<void>(
       context: context,
@@ -208,6 +263,12 @@ class _QueueWidgetState extends State<QueueWidget> {
               ],
             ),
           ),
+          if (_queue.isNotEmpty)
+            IconButton(
+              tooltip: 'Save queue as playlist',
+              icon: const Icon(FluentIcons.save_24_regular, size: 20),
+              onPressed: () => _saveQueueAsPlaylist(context),
+            ),
           if (_queue.isNotEmpty)
             FilledButton.tonalIcon(
               onPressed: () => _confirmClearQueue(context),

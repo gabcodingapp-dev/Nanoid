@@ -25,6 +25,7 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:nanoid/extensions/l10n.dart';
 import 'package:nanoid/main.dart';
+import 'package:nanoid/widgets/playback_speed_sheet.dart';
 import 'package:nanoid/services/common_services.dart';
 import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/utilities/flutter_bottom_sheet.dart';
@@ -151,6 +152,7 @@ class _BottomActionsRowState extends State<BottomActionsRow> {
                     ),
               tooltip: l10n.makeOffline,
             ),
+          _buildSpeedButton(context, colorScheme, responsiveIconSize),
           _buildSleepTimerButton(context, colorScheme, responsiveIconSize),
           if (!offlineMode.value && !isRadioStation)
             _buildSimpleActionButton(
@@ -235,6 +237,41 @@ class _BottomActionsRowState extends State<BottomActionsRow> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: actions,
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSpeedButton(
+    BuildContext context,
+    ColorScheme colorScheme,
+    double size,
+  ) {
+    return ValueListenableBuilder<double>(
+      valueListenable: playbackSpeed,
+      builder: (context, speed, _) {
+        final isActive = (speed - 1.0).abs() > 0.001;
+        return IconButton(
+          tooltip: 'Playback speed',
+          iconSize: size,
+          icon: Icon(
+            isActive
+                ? FluentIcons.top_speed_24_filled
+                : FluentIcons.top_speed_24_regular,
+            color: isActive
+                ? colorScheme.primary
+                : colorScheme.onSurfaceVariant,
+          ),
+          style: IconButton.styleFrom(
+            backgroundColor: isActive
+                ? colorScheme.primary.withValues(alpha: 0.15)
+                : Colors.transparent,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: () => PlaybackSpeedSheet.show(context),
         );
       },
     );

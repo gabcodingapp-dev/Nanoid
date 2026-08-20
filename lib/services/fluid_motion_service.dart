@@ -31,7 +31,8 @@ import 'package:sensors_plus/sensors_plus.dart';
 class FluidMotionService {
   factory FluidMotionService() => _instance;
   FluidMotionService._internal() {
-    fluidGyroEnabled.addListener(_syncGyro);
+    fluidGyroEnabled.addListener(_syncAccelerometer);
+    shakeToSkipEnabled.addListener(_syncAccelerometer);
     fluidRhythmEnabled.addListener(_syncRhythm);
   }
   static final FluidMotionService _instance = FluidMotionService._internal();
@@ -51,8 +52,10 @@ class FluidMotionService {
   /// into the previous one keeps the backdrop from vibrating.
   static const double _smoothing = 0.12;
 
-  void _syncGyro() {
-    if (fluidGyroEnabled.value) {
+  /// One accelerometer subscription serves both the Fluid tilt and
+  /// shake-to-skip, so enabling both costs no extra sensor work.
+  void _syncAccelerometer() {
+    if (fluidGyroEnabled.value || shakeToSkipEnabled.value) {
       _startGyro();
     } else {
       _stopGyro();
@@ -67,13 +70,16 @@ class FluidMotionService {
             samplingPeriod: const Duration(milliseconds: 66),
           ).listen(
             (event) {
-              final targetX = (event.x / _tiltDivisor).clamp(-1.0, 1.0);
-              final targetY = (event.y / _tiltDivisor).clamp(-1.0, 1.0);
-              final current = tilt.value;
-              tilt.value = Offset(
-                current.dx + (targetX - current.dx) * _smoothing,
-                current.dy + (targetY - current.dy) * _smoothing,
-              );
+              if (fluidGyroEnabled.value) {
+                final targetX = (event.x / _tiltDivisor).clamp(-1.0, 1.0);
+                final targetY = (event.y / _tiltDivisor).clamp(-1.0, 1.0);
+                final current = tilt.value;
+                tilt.value = Offset(
+                  current.dx + (targetX - current.dx) * _smoothing,
+                  current.dy + (targetY - current.dy) * _smoothing,
+                );
+              }
+              if (shakeToSkipEnabled.value) _detectShake(event);
             },
             onError: (Object e) {
               // No accelerometer (emulator, desktop). Fail quiet and flat.
@@ -95,6 +101,34 @@ class FluidMotionService {
     _accelSub?.cancel();
     _accelSub = null;
     tilt.value = Offset.zero;
+  }
+
+  // --- Shake to skip -------------------------------------------------------
+
+  DateTime _lastShake = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// Total acceleration, in m/s^2, above which a sample counts as a shake.
+  /// Gravity alone is ~9.81, so this needs meaningful movement on top of it.
+  static const double _shakeThreshold = 22;
+
+  /// Ignore further shakes for this long after one fires, otherwise a single
+  /// physical shake spans several samples and skips a handful of tracks.
+  static const Duration _shakeCooldown = Duration(milliseconds: 1200);
+
+  void _detectShake(AccelerometerEvent event) {
+    final magnitude = math.sqrt(
+      (event.x * event.x) + (event.y * event.y) + (event.z * event.z),
+    );
+    if (magnitude < _shakeThreshold) return;
+
+    final now = DateTime.now();
+    if (now.difference(_lastShake) < _shakeCooldown) return;
+    _lastShake = now;
+
+    // Only act while something is actually playing; a shake in the pocket
+    // with the player idle should do nothing.
+    if (!audioHandler.playbackState.value.playing) return;
+    unawaited(audioHandler.skipToNext());
   }
 
   // --- Fluid Rhythm --------------------------------------------------------
@@ -149,7 +183,7 @@ class FluidMotionService {
 
   /// Starts whichever modes are already enabled. Called once at boot.
   void initialise() {
-    _syncGyro();
+    _syncAccelerometer();
     _syncRhythm();
   }
 

@@ -139,6 +139,71 @@ class SettingsPage extends StatelessWidget {
           ),
         ),
         ValueListenableBuilder<bool>(
+          valueListenable: skipSilenceEnabled,
+          builder: (_, value, __) => CustomBar(
+            'Skip silence',
+            FluentIcons.speaker_mute_24_regular,
+            description: 'Trim silent gaps while playing.',
+            trailing: Switch(
+              value: value,
+              onChanged: (v) {
+                audioHandler.setSkipSilence(v);
+                showToast(context, context.l10n!.settingChangedMsg);
+              },
+            ),
+          ),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: shakeToSkipEnabled,
+          builder: (_, value, __) => CustomBar(
+            'Shake to skip',
+            FluentIcons.phone_vibrate_24_regular,
+            description: 'Shake the device to jump to the next track.',
+            trailing: Switch(
+              value: value,
+              onChanged: (v) {
+                addOrUpdateData<bool>('settings', 'shakeToSkipEnabled', v);
+                shakeToSkipEnabled.value = v;
+                showToast(context, context.l10n!.settingChangedMsg);
+              },
+            ),
+          ),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: doubleTapSeekEnabled,
+          builder: (_, value, __) => CustomBar(
+            'Double-tap to seek',
+            FluentIcons.tap_double_24_regular,
+            description:
+                'Double-tap the artwork edges to jump '
+                '${doubleTapSeekSeconds.value}s.',
+            trailing: Switch(
+              value: value,
+              onChanged: (v) {
+                addOrUpdateData<bool>('settings', 'doubleTapSeekEnabled', v);
+                doubleTapSeekEnabled.value = v;
+                showToast(context, context.l10n!.settingChangedMsg);
+              },
+            ),
+          ),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: restoreQueueEnabled,
+          builder: (_, value, __) => CustomBar(
+            'Restore queue on start',
+            FluentIcons.history_24_regular,
+            description: 'Rebuild the last queue when Nanoid opens.',
+            trailing: Switch(
+              value: value,
+              onChanged: (v) {
+                addOrUpdateData<bool>('settings', 'restoreQueueEnabled', v);
+                restoreQueueEnabled.value = v;
+                showToast(context, context.l10n!.settingChangedMsg);
+              },
+            ),
+          ),
+        ),
+        ValueListenableBuilder<bool>(
           valueListenable: fluidThemeEnabled,
           builder: (_, value, __) => CustomBar(
             'Fluid Theme (Exclusive)',

@@ -27,6 +27,7 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:nanoid/extensions/l10n.dart';
 import 'package:nanoid/models/lyrics.dart';
+import 'package:nanoid/main.dart';
 import 'package:nanoid/services/common_services.dart';
 import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/utilities/async_loader.dart';
@@ -64,7 +65,8 @@ class NowPlayingArtwork extends StatelessWidget {
 
     const borderRadius = 24.0;
 
-    return FlipCard(
+    return _DoubleTapSeek(
+      child: FlipCard(
       rotateSide: RotateSide.right,
       onTapFlipping: !offlineMode.value,
       controller: lyricsController,
@@ -133,6 +135,48 @@ class NowPlayingArtwork extends StatelessWidget {
                 ),
         ),
       ),
+    ),
+    );
+  }
+}
+
+/// Wraps the artwork so a double-tap on the left or right edge seeks.
+///
+/// Deliberately edge-only: a double-tap in the middle stays free for the
+/// existing flip-to-lyrics gesture.
+class _DoubleTapSeek extends StatelessWidget {
+  const _DoubleTapSeek({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: doubleTapSeekEnabled,
+      builder: (context, enabled, _) {
+        if (!enabled) return child;
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            var lastTapX = 0.0;
+            return GestureDetector(
+              behavior: HitTestBehavior.deferToChild,
+              onDoubleTapDown: (details) =>
+                  lastTapX = details.localPosition.dx,
+              onDoubleTap: () {
+                final step = Duration(seconds: doubleTapSeekSeconds.value);
+                final edge = width * 0.3;
+                if (lastTapX < edge) {
+                  audioHandler.seekBy(-step);
+                } else if (lastTapX > width - edge) {
+                  audioHandler.seekBy(step);
+                }
+              },
+              child: child,
+            );
+          },
+        );
+      },
     );
   }
 }

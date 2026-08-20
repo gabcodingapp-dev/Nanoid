@@ -51,6 +51,37 @@ final liquidGlassEnabled = ValueNotifier<bool>(
   Hive.box('settings').get('liquidGlassEnabled', defaultValue: false),
 );
 
+/// Playback speed multiplier, 0.5x - 2.0x.
+final playbackSpeed = ValueNotifier<double>(
+  (Hive.box('settings').get('playbackSpeed', defaultValue: 1.0) as num)
+      .toDouble(),
+);
+
+/// Trims silent passages during playback (ExoPlayer feature, Android only).
+final skipSilenceEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('skipSilenceEnabled', defaultValue: false),
+);
+
+/// Shake the device to jump to the next track.
+final shakeToSkipEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('shakeToSkipEnabled', defaultValue: false),
+);
+
+/// Double-tap the left/right edge of the artwork to seek.
+final doubleTapSeekEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('doubleTapSeekEnabled', defaultValue: true),
+);
+
+/// Seek step used by double-tap, in seconds.
+final doubleTapSeekSeconds = ValueNotifier<int>(
+  Hive.box('settings').get('doubleTapSeekSeconds', defaultValue: 10),
+);
+
+/// Rebuild the previous queue when the app starts.
+final restoreQueueEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('restoreQueueEnabled', defaultValue: true),
+);
+
 /// Fluid: an exclusive monochrome theme with a slow-moving liquid backdrop.
 /// Overrides the accent colour entirely while active.
 final fluidThemeEnabled = ValueNotifier<bool>(
