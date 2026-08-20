@@ -45,8 +45,6 @@ import 'package:nanoid/widgets/auto_format_text.dart';
 /// reason to maintain a second manifest.
 const String releasesUrl =
     'https://api.github.com/repos/gabcodingapp-dev/Nanoid/releases/latest';
-const String downloadUrlKey = 'url';
-const String downloadUrlArm64Key = 'arm64url';
 const String downloadFilename = 'Nanoid.apk';
 
 Future<void> checkAppUpdates() async {
@@ -165,7 +163,7 @@ Future<void> checkAppUpdates() async {
             ),
             FilledButton.icon(
               onPressed: () {
-                getDownloadUrl(map).then(
+                getDownloadUrl(releasesResponse).then(
                   (url) => {launchURL(Uri.parse(url)), Navigator.pop(context)},
                 );
               },
@@ -270,13 +268,32 @@ Future<String> getCPUArchitecture() async {
   return cpu;
 }
 
-Future<String> getDownloadUrl(Map<String, dynamic> map) async {
-  final cpuArchitecture = await getCPUArchitecture();
-  final url = cpuArchitecture == 'aarch64'
-      ? map[downloadUrlArm64Key].toString()
-      : map[downloadUrlKey].toString();
+/// Picks the best APK asset from a GitHub release payload.
+///
+/// Prefers an arm64-specific build on aarch64 devices, then any APK, and
+/// finally falls back to the release page so the button is never a dead end.
+Future<String> getDownloadUrl(Map<String, dynamic> release) async {
+  final assets = (release['assets'] as List?) ?? const [];
+  final apks = assets
+      .whereType<Map<String, dynamic>>()
+      .where((a) => a['name'].toString().toLowerCase().endsWith('.apk'))
+      .toList();
 
-  return url;
+  if (apks.isEmpty) {
+    return (release['html_url'] ?? releasesUrl).toString();
+  }
+
+  final cpuArchitecture = await getCPUArchitecture();
+  if (cpuArchitecture == 'aarch64') {
+    for (final asset in apks) {
+      final name = asset['name'].toString().toLowerCase();
+      if (name.contains('arm64')) {
+        return asset['browser_download_url'].toString();
+      }
+    }
+  }
+
+  return apks.first['browser_download_url'].toString();
 }
 
 /// Announcements were served from the same `check.json` manifest that no
