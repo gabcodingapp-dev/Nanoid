@@ -30,12 +30,13 @@ class MainActivity : AudioServiceActivity() {
             // hard cut. Deliberately brief so it never reads as an intro
             // animation: it plays over Flutter's already-rendered first frame,
             // so it costs nothing at startup.
+            // The platform API hands back an android.window.SplashScreenView,
+            // which is itself a View (unlike androidx's SplashScreenViewProvider,
+            // which exposes a .view). Animate it directly.
             splashScreen.setOnExitAnimationListener { splashScreenView ->
-                val view: View = splashScreenView.view
-
-                val fade = ObjectAnimator.ofFloat(view, View.ALPHA, 1f, 0f)
-                val scaleX = ObjectAnimator.ofFloat(view, View.SCALE_X, 1f, 1.06f)
-                val scaleY = ObjectAnimator.ofFloat(view, View.SCALE_Y, 1f, 1.06f)
+                val fade = ObjectAnimator.ofFloat(splashScreenView, View.ALPHA, 1f, 0f)
+                val scaleX = ObjectAnimator.ofFloat(splashScreenView, View.SCALE_X, 1f, 1.06f)
+                val scaleY = ObjectAnimator.ofFloat(splashScreenView, View.SCALE_Y, 1f, 1.06f)
 
                 AnimatorSet().apply {
                     playTogether(fade, scaleX, scaleY)
