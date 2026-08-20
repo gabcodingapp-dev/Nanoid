@@ -30,6 +30,7 @@ import 'package:nanoid/main.dart';
 import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/utilities/flutter_bottom_sheet.dart'
     show closeCurrentBottomSheet;
+import 'package:nanoid/widgets/liquid_glass.dart';
 import 'package:nanoid/widgets/mini_player.dart';
 
 class BottomNavigationPage extends StatefulWidget {
@@ -140,23 +141,51 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
                   ),
                 ),
                 bottomNavigationBar: !isLargeScreen
-                    ? NavigationBar(
-                        selectedIndex: _getCurrentIndex(items, isOfflineMode),
-                        labelBehavior: languageSetting == const Locale('en', '')
-                            ? NavigationDestinationLabelBehavior
-                                  .onlyShowSelected
-                            : NavigationDestinationLabelBehavior.alwaysHide,
-                        onDestinationSelected: (index) =>
-                            _onTabTapped(index, items),
-                        destinations: items
-                            .map(
-                              (item) => NavigationDestination(
-                                icon: Icon(item.icon),
-                                selectedIcon: Icon(item.selectedIcon),
-                                label: item.label,
-                              ),
-                            )
-                            .toList(),
+                    ? ValueListenableBuilder<bool>(
+                        valueListenable: liquidGlassEnabled,
+                        builder: (context, glass, _) {
+                          final bar = NavigationBar(
+                            // Let the glass supply the fill; M3's surface tint
+                            // would otherwise sit opaquely on top of the blur.
+                            backgroundColor: glass
+                                ? Colors.transparent
+                                : null,
+                            surfaceTintColor: glass
+                                ? Colors.transparent
+                                : null,
+                            elevation: glass ? 0 : null,
+                            selectedIndex: _getCurrentIndex(
+                              items,
+                              isOfflineMode,
+                            ),
+                            labelBehavior:
+                                languageSetting == const Locale('en', '')
+                                ? NavigationDestinationLabelBehavior
+                                      .onlyShowSelected
+                                : NavigationDestinationLabelBehavior.alwaysHide,
+                            onDestinationSelected: (index) =>
+                                _onTabTapped(index, items),
+                            destinations: items
+                                .map(
+                                  (item) => NavigationDestination(
+                                    icon: Icon(item.icon),
+                                    selectedIcon: Icon(item.selectedIcon),
+                                    label: item.label,
+                                  ),
+                                )
+                                .toList(),
+                          );
+
+                          if (!glass) return bar;
+
+                          return LiquidGlass(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(26),
+                            ),
+                            blur: 28,
+                            child: bar,
+                          );
+                        },
                       )
                     : null,
               );

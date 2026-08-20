@@ -28,6 +28,8 @@ import 'package:nanoid/main.dart';
 import 'package:nanoid/models/full_player_state.dart';
 import 'package:nanoid/models/position_data.dart';
 import 'package:nanoid/screens/now_playing_page.dart';
+import 'package:nanoid/services/settings_manager.dart';
+import 'package:nanoid/widgets/liquid_glass.dart';
 import 'package:nanoid/widgets/marquee.dart';
 import 'package:nanoid/widgets/song_artwork.dart';
 import 'package:rxdart/rxdart.dart';
@@ -185,18 +187,36 @@ class _MiniPlayerBodyState extends State<_MiniPlayerBody>
             onTapCancel: () => _animationController.reverse(),
             onVerticalDragUpdate: _handleVerticalDrag,
             onTap: _navigateToNowPlaying,
-            child: Container(
-              height: MiniPlayer.playerHeight,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(MiniPlayer._borderRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.shadow.withValues(alpha: 0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+            child: ValueListenableBuilder<bool>(
+              valueListenable: liquidGlassEnabled,
+              builder: (context, glass, child) => Container(
+                height: MiniPlayer.playerHeight,
+                decoration: BoxDecoration(
+                  // Under Liquid Glass the backdrop provides the fill, so the
+                  // opaque surface colour is dropped and the shadow softened.
+                  color: glass ? null : colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(
+                    MiniPlayer._borderRadius,
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.shadow.withValues(
+                        alpha: glass ? 0.16 : 0.08,
+                      ),
+                      blurRadius: glass ? 18 : 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: glass
+                    ? LiquidGlass(
+                        borderRadius: BorderRadius.circular(
+                          MiniPlayer._borderRadius,
+                        ),
+                        blur: 26,
+                        child: child!,
+                      )
+                    : child,
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(MiniPlayer._borderRadius),

@@ -44,6 +44,12 @@ final usePureBlackColor = ValueNotifier<bool>(
   Hive.box('settings').get('usePureBlackColor', defaultValue: false),
 );
 
+/// Liquid Glass (Beta). Off by default: BackdropFilter forces a compositor
+/// read-back, so it is opt-in rather than something every device pays for.
+final liquidGlassEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('liquidGlassEnabled', defaultValue: false),
+);
+
 final offlineMode = ValueNotifier<bool>(
   Hive.box('settings').get('offlineMode', defaultValue: false),
 );

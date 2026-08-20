@@ -108,6 +108,7 @@ class _HomePageState extends State<HomePage> {
             ),
             _buildSuggestedPlaylists(playlistHeight),
             _buildSuggestedPlaylists(playlistHeight, showOnlyLiked: true),
+            _buildRecentlyPlayedSection(),
             _buildCurrentMonthRecapSection(),
             _buildRecommendedSongsSection(),
             const MiniPlayerBottomSpace(),
@@ -210,6 +211,67 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Quick "pick up where you left off" list.
+  ///
+  /// Capped at [_recentlyPlayedLimit] so the home screen stays scannable; the
+  /// full history already has its own page. Hidden entirely when empty so new
+  /// installs don't show a dead section.
+  static const int _recentlyPlayedLimit = 5;
+
+  Widget _buildRecentlyPlayedSection() {
+    return ValueListenableBuilder<List>(
+      valueListenable: userRecentlyPlayed,
+      builder: (context, recentlyPlayed, _) {
+        if (recentlyPlayed.isEmpty) return const SizedBox.shrink();
+
+        final songs = recentlyPlayed.length > _recentlyPlayedLimit
+            ? recentlyPlayed.sublist(0, _recentlyPlayedLimit)
+            : recentlyPlayed;
+        final title = context.l10n!.recentlyPlayed;
+
+        return Column(
+          children: [
+            SectionHeader(
+              title: title,
+              icon: FluentIcons.history_24_filled,
+              actionButton: IconButton(
+                tooltip: title,
+                onPressed: () async {
+                  await audioHandler.playPlaylistSong(
+                    playlist: {'title': title, 'list': songs},
+                    songIndex: 0,
+                  );
+                },
+                icon: Icon(
+                  FluentIcons.play_circle_24_filled,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 30,
+                ),
+              ),
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: songs.length,
+              itemBuilder: (context, index) {
+                final borderRadius = getItemBorderRadius(index, songs.length);
+                return RepaintBoundary(
+                  key: listItemKey('home_recent', index, songs[index]),
+                  child: SongBar(
+                    songs[index],
+                    true,
+                    isRecentSong: true,
+                    borderRadius: borderRadius,
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildRecommendedSongsSection() {
     return AsyncLoader<List<dynamic>>(
       future: _recommendedSongsFuture,
@@ -307,7 +369,7 @@ class _HomePageState extends State<HomePage> {
         ),
         ListView.builder(
           shrinkWrap: true,
-          physics: const BouncingScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           itemCount: data.length,
           padding: commonListViewBottomPadding,
           itemBuilder: (context, index) {

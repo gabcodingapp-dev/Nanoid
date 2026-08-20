@@ -137,6 +137,20 @@ class SettingsPage extends StatelessWidget {
             onChanged: (value) => _toggleSystemColor(context, value),
           ),
         ),
+        ValueListenableBuilder<bool>(
+          valueListenable: liquidGlassEnabled,
+          builder: (_, value, __) => CustomBar(
+            'Liquid Glass (Beta)',
+            FluentIcons.drop_24_regular,
+            description:
+                'Translucent, blurred nav bar and mini player. '
+                'May reduce battery life on older devices.',
+            trailing: Switch(
+              value: value,
+              onChanged: (v) => _toggleLiquidGlass(context, v),
+            ),
+          ),
+        ),
 
         ValueListenableBuilder<bool>(
           valueListenable: showAudioQualityBadge,
@@ -656,6 +670,12 @@ class SettingsPage extends StatelessWidget {
       newAccentColor: primaryColorSetting,
       useSystemColor: value,
     );
+    showToast(context, context.l10n!.settingChangedMsg);
+  }
+
+  void _toggleLiquidGlass(BuildContext context, bool value) {
+    addOrUpdateData<bool>('settings', 'liquidGlassEnabled', value);
+    liquidGlassEnabled.value = value;
     showToast(context, context.l10n!.settingChangedMsg);
   }
 
