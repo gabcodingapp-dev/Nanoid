@@ -1,12 +1,12 @@
 /*
  *     Copyright (C) 2026 Valeri Gokadze
  *
- *     Musify is free software: you can redistribute it and/or modify
+ *     Nanoid is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  *
- *     Musify is distributed in the hope that it will be useful,
+ *     Nanoid is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *
- *     For more information about Musify, including how to contribute,
- *     please visit: https://github.com/gokadzev/Musify
+ *     For more information about Nanoid, including how to contribute,
+ *     please visit: https://github.com/gabcodingapp-dev/Nanoid
  */
 
 import 'package:flutter/material.dart' as flutter;
@@ -50,6 +50,13 @@ ColorScheme getAppColorScheme(
   flutter.ColorScheme? lightColorScheme,
   flutter.ColorScheme? darkColorScheme,
 ) {
+  // Fluid is an exclusive monochrome theme: it deliberately overrides both the
+  // chosen accent and any system dynamic colour, otherwise it would not be
+  // black and white.
+  if (fluidThemeEnabled.value) {
+    return _fluidMonochromeScheme(brightness);
+  }
+
   final selectedScheme = (brightness == Brightness.light)
       ? lightColorScheme
       : darkColorScheme;
@@ -62,6 +69,52 @@ ColorScheme getAppColorScheme(
       brightness: brightness,
     );
   }
+}
+
+/// Strict black-and-white scheme for the Fluid theme.
+///
+/// Built from a neutral seed and then flattened, so every Material role stays
+/// consistent while nothing carries a hue. Error stays red - a colourless
+/// error state would be a usability regression, not a design choice.
+ColorScheme _fluidMonochromeScheme(Brightness brightness) {
+  final isDark = brightness == Brightness.dark;
+
+  const black = Color(0xFF000000);
+  const white = Color(0xFFFFFFFF);
+
+  final base = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF9E9E9E),
+    brightness: brightness,
+  );
+
+  return base.copyWith(
+    primary: isDark ? white : black,
+    onPrimary: isDark ? black : white,
+    primaryContainer: isDark ? const Color(0xFF1F1F1F) : const Color(0xFFE8E8E8),
+    onPrimaryContainer: isDark ? white : black,
+    secondary: isDark ? const Color(0xFFD6D6D6) : const Color(0xFF2A2A2A),
+    onSecondary: isDark ? black : white,
+    secondaryContainer: isDark
+        ? const Color(0xFF1A1A1A)
+        : const Color(0xFFEDEDED),
+    onSecondaryContainer: isDark ? white : black,
+    tertiary: isDark ? const Color(0xFFBDBDBD) : const Color(0xFF3D3D3D),
+    onTertiary: isDark ? black : white,
+    surface: isDark ? black : white,
+    onSurface: isDark ? white : black,
+    surfaceContainerLowest: isDark ? black : white,
+    surfaceContainerLow: isDark ? const Color(0xFF0B0B0B) : const Color(0xFFF7F7F7),
+    surfaceContainer: isDark ? const Color(0xFF121212) : const Color(0xFFF2F2F2),
+    surfaceContainerHigh: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEBEBEB),
+    surfaceContainerHighest: isDark
+        ? const Color(0xFF212121)
+        : const Color(0xFFE4E4E4),
+    onSurfaceVariant: isDark ? const Color(0xFFB5B5B5) : const Color(0xFF4A4A4A),
+    outline: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFC9C9C9),
+    outlineVariant: isDark ? const Color(0xFF262626) : const Color(0xFFDEDEDE),
+    inverseSurface: isDark ? white : black,
+    onInverseSurface: isDark ? black : white,
+  );
 }
 
 // TODO: Remove when dynamic_color supports material_ui ColorScheme directly
