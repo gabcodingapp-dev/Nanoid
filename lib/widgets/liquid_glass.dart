@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2026 Nanoid contributors
+ *     Copyright (C) 2026 Gab Nikumura
  *
  *     Nanoid is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by

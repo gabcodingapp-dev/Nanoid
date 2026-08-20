@@ -178,7 +178,27 @@ Status legend: `M` modified, `A` added, `D` deleted, `R` renamed.
 - **Splash**: two-part exit - the mark eases up and scales down, then the
   backdrop fades a beat later.
 
-### Why the GPL headers still say "Musify"
+### Authorship and copyright
+
+All Nanoid-specific work is **Copyright (C) 2026 Gab Nikumura**:
+
+- 8 files written from scratch for Nanoid carry Gab Nikumura's copyright alone
+  (lyrics model, LRCLIB client, offline lyrics service, synced lyrics view,
+  Liquid Glass, Fluid backdrop, Fluid motion service, in-app splash).
+- 105 inherited files carry **dual copyright** - Gab Nikumura for the Nanoid
+  modifications, Valeri Gokadze for the original work.
+- The GPL boilerplate names the program, so it reads "Nanoid is free software"
+  throughout and points at this repo.
+- `NOTICE` records the fork origin and the fact of modification.
+
+**The original copyright line cannot be deleted.** GPL-3.0 section 5 requires a
+modified work to preserve existing copyright notices; removing them would end
+the licence grant, making every copy of Nanoid an infringing distribution and
+exposing the repo to takedown. Dual copyright is the correct construction: it
+asserts Gab Nikumura's ownership of the new work at full strength while keeping
+distribution lawful.
+
+### Why the GPL boilerplate references Musify at all
 
 The 420 licence-header lines in `lib/**/*.dart` and the `LICENSE` file are
 **not** removable. GPL-3.0 section 5 requires modified works to keep existing

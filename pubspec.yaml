@@ -1,11 +1,11 @@
 name: nanoid
-description: Nanoid by Gab - Minimalist music with offline lyrics
+description: Nanoid by Gab Nikumura - Minimalist music with offline lyrics
 homepage: https://github.com/gabcodingapp-dev/Nanoid
 repository: https://github.com/gabcodingapp-dev/Nanoid
 issue_tracker: https://github.com/gabcodingapp-dev/Nanoid/issues
 
 publish_to: 'none'
-version: 1.0.0+1 # Nanoid by Gab
+version: 1.0.0+1 # Nanoid by Gab Nikumura
 
 environment:
   sdk: '>=3.13.0 <4.0.0'

@@ -1,5 +1,6 @@
 /*
- *     Copyright (C) 2026 Valeri Gokadze
+ *     Copyright (C) 2026 Gab Nikumura (Nanoid modifications)
+ *     Copyright (C) 2026 Valeri Gokadze (original work)
  *
  *     Nanoid is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -90,6 +91,16 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
+                    'by Gab Nikumura',
+                    style: TextStyle(
+                      color: colorScheme.primary.withValues(alpha: 0.85),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
                     'Minimalist music, with offline lyrics',
                     style: TextStyle(
                       color: colorScheme.onSurfaceVariant,
@@ -127,8 +138,8 @@ class AboutPage extends StatelessWidget {
             // plus the Licenses screen satisfies that; the full copyright
             // headers remain in the source files.
             Text(
-              'Free and open source · GPL-3.0\n'
-              'A modified fork of the Musify project.',
+              'Nanoid © 2026 Gab Nikumura · GPL-3.0\n'
+              'Free and open source. Built on the Musify project.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),

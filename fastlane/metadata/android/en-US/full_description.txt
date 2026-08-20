@@ -12,3 +12,5 @@
 * No subscriptions
 * 21 supported languages
 * Material UI & accent colors & dynamic colors (Android 12+)
+
+Nanoid is developed by Gab Nikumura and released under the GPL-3.0 licence.

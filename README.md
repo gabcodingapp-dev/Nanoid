@@ -4,7 +4,7 @@
 
   # Nanoid
 
-  ### Minimalist Music — by **Gab**
+  ### Minimalist Music — by **Gab Nikumura**
 
   **Offline Lyrics • Minimal Splash • Clean Design • `com.gab.nanoid`**
 
@@ -26,13 +26,13 @@
 ---
 
 > [!TIP]
-> **Forked from Musify, reimagined as Nanoid by Gab — minimalist, faster, with offline lyrics.**
+> **Forked from Musify, reimagined as Nanoid by Gab Nikumura — minimalist, faster, with offline lyrics.**
 
 ---
 
 ## ✨ What's New in Nanoid
 
-| **Musify** | **Nanoid by Gab** |
+| **Musify** | **Nanoid by Gab Nikumura** |
 |---|---|
 | Lyrics only online | **Offline Lyrics** — auto-fetched on download, read without internet |
 | Heavy splash | **Minimalist Splash** — black, centered logo, 400ms |
@@ -84,7 +84,7 @@ flutter build apk --release
 
 | Role | Name |
 |---|---|
-| **Developer** | **Gab** (`gabcodingapp-dev`) |
+| **Developer** | **Gab Nikumura** (`gabcodingapp-dev`) |
 | **Package** | `com.gab.nanoid` |
 | **Original** | `gokadzev/Musify` (GPL-3.0) — reimagined as Nanoid |
 
@@ -92,12 +92,12 @@ flutter build apk --release
 
 ## 📄 License
 
-GPL-3.0 © Gab — keep source open.
+GPL-3.0 © 2026 Gab Nikumura — keep source open.
 
 ---
 
 <div align="center">
 
-**Made with 🖤 by Gab**
+**Made with 🖤 by Gab Nikumura**
 
 </div>
