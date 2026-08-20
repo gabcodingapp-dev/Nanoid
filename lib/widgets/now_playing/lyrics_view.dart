@@ -19,6 +19,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:nanoid/main.dart';
 import 'package:nanoid/models/lyrics.dart';
 import 'package:nanoid/models/position_data.dart';
+import 'package:nanoid/services/data_manager.dart';
+import 'package:nanoid/services/settings_manager.dart';
 
 /// Renders lyrics for the now-playing card.
 ///
@@ -36,13 +38,20 @@ class LyricsView extends StatelessWidget {
       return _PlainLyrics(text: lyrics.content, textColor: textColor);
     }
 
-    final lines = lyrics.parseSynced();
+    final lines = lyrics.parseSynced(extraOffsetMs: lyricsOffsetMs.value);
     if (lines.isEmpty) {
       // Malformed LRC - degrade to whatever readable text we can recover.
       return _PlainLyrics(text: lyrics.plainText, textColor: textColor);
     }
 
-    return _SyncedLyrics(lines: lines, textColor: textColor);
+    // Rebuild whenever the user nudges timing so the change is instant.
+    return ValueListenableBuilder<int>(
+      valueListenable: lyricsOffsetMs,
+      builder: (context, offset, _) => _SyncedLyrics(
+        lines: lyrics.parseSynced(extraOffsetMs: offset),
+        textColor: textColor,
+      ),
+    );
   }
 }
 
@@ -146,9 +155,11 @@ class _SyncedLyricsState extends State<_SyncedLyrics> {
           WidgetsBinding.instance.addPostFrameCallback((_) => _centreOn(index));
         }
 
-        return ListView.builder(
+        return Stack(
+          children: [
+            ListView.builder(
           controller: _controller,
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 56),
           physics: const BouncingScrollPhysics(),
           itemCount: widget.lines.length,
           itemExtent: _lineExtent,
@@ -178,8 +189,102 @@ class _SyncedLyricsState extends State<_SyncedLyrics> {
               ),
             );
           },
+        ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 6,
+              child: _SyncNudgeBar(textColor: widget.textColor),
+            ),
+          ],
         );
       },
+    );
+  }
+}
+
+/// Lets the listener correct residual drift without leaving the player.
+///
+/// Even a correct LRC can sit slightly ahead or behind depending on the
+/// specific encode being streamed, so a manual trim is the pragmatic fix.
+class _SyncNudgeBar extends StatelessWidget {
+  const _SyncNudgeBar({required this.textColor});
+
+  final Color textColor;
+
+  static const int _stepMs = 250;
+
+  void _nudge(int deltaMs) {
+    final next = (lyricsOffsetMs.value + deltaMs).clamp(-10000, 10000);
+    lyricsOffsetMs.value = next;
+    addOrUpdateData<int>('settings', 'lyricsOffsetMs', next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: lyricsOffsetMs,
+      builder: (context, offset, _) {
+        final label = offset == 0
+            ? 'In sync'
+            : '${offset > 0 ? '+' : ''}${(offset / 1000).toStringAsFixed(2)}s';
+
+        return Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _NudgeButton(
+                icon: Icons.remove,
+                textColor: textColor,
+                onTap: () => _nudge(-_stepMs),
+              ),
+              GestureDetector(
+                onTap: offset == 0 ? null : () => _nudge(-offset),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: textColor.withValues(alpha: 0.6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              _NudgeButton(
+                icon: Icons.add,
+                textColor: textColor,
+                onTap: () => _nudge(_stepMs),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _NudgeButton extends StatelessWidget {
+  const _NudgeButton({
+    required this.icon,
+    required this.textColor,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color textColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkResponse(
+      onTap: onTap,
+      radius: 20,
+      child: Padding(
+        padding: const EdgeInsets.all(6),
+        child: Icon(icon, size: 18, color: textColor.withValues(alpha: 0.6)),
+      ),
     );
   }
 }

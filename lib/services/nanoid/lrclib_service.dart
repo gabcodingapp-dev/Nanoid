@@ -40,6 +40,9 @@ class LrcLibService {
   static const Duration _timeout = Duration(seconds: 10);
   static const String sourceName = 'lrclib';
 
+  /// Timing drift past this many seconds means it is a different recording.
+  static const int _maxDurationDriftSeconds = 8;
+
   Map<String, String> get _headers => const {'User-Agent': _userAgent};
 
   /// Looks up lyrics for a track.
@@ -61,9 +64,19 @@ class LrcLibService {
       album: album,
       duration: duration,
     );
-    if (exact != null) return exact;
+    // A synced hit is the whole point, so only stop here if we actually got
+    // one. Previously a plain-text exact match short-circuited the search and
+    // the user lost line highlighting for tracks that do have an LRC.
+    if (exact != null && exact.isSynced) return exact;
 
-    return _search(artist: artist, title: title, duration: duration);
+    final searched = await _search(
+      artist: artist,
+      title: title,
+      duration: duration,
+    );
+    if (searched != null && searched.isSynced) return searched;
+
+    return exact ?? searched;
   }
 
   Future<Lyrics?> _get({
@@ -135,7 +148,10 @@ class LrcLibService {
     if (target != null && target > Duration.zero) {
       final itemDuration = (item['duration'] as num?)?.round();
       if (itemDuration != null) {
-        score += (itemDuration - target.inSeconds).abs();
+        final delta = (itemDuration - target.inSeconds).abs();
+        // Beyond ~8s apart it is almost certainly a different cut (live,
+        // extended, radio edit) and its timings will not line up.
+        score += delta > _maxDurationDriftSeconds ? 5000 + delta : delta;
       } else {
         score += 500;
       }

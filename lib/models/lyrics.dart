@@ -67,14 +67,40 @@ class Lyrics {
   /// Metadata tags such as `[ar:...]`, `[ti:...]`, `[offset:...]`.
   static final RegExp _metaTag = RegExp(r'^\[[a-zA-Z#]+:.*\]$');
 
+  /// `[offset:+250]` / `[offset:-1200]`, in milliseconds.
+  static final RegExp _offsetTag = RegExp(
+    r'^\[offset:\s*([+-]?\d+)\s*\]$',
+    caseSensitive: false,
+  );
+
+  /// The file's own timing correction, in milliseconds.
+  ///
+  /// By LRC convention a positive offset means the lyrics should appear
+  /// *earlier*, so it is subtracted from each timestamp. Ignoring this tag was
+  /// making some tracks drift by up to a second.
+  int get embeddedOffsetMs {
+    if (!isSynced) return 0;
+    for (final rawLine in content.split('\n')) {
+      final match = _offsetTag.firstMatch(rawLine.trim());
+      if (match != null) return int.tryParse(match.group(1) ?? '') ?? 0;
+    }
+    return 0;
+  }
+
   /// Parses [content] as LRC. Returns an empty list for plain lyrics.
   ///
   /// A single source line may carry several timestamps (`[00:12.00][01:40.00]`),
   /// which is legal LRC and is expanded into one entry per timestamp. Lines are
   /// returned sorted by time; blank lyric lines are preserved because they act
   /// as musical rests during playback.
-  List<LrcLine> parseSynced() {
+  List<LrcLine> parseSynced({int extraOffsetMs = 0}) {
     if (!isSynced) return const [];
+
+    // Combine the file's own [offset:] with any user nudge, then subtract:
+    // positive offset = show earlier.
+    final totalOffset = Duration(
+      milliseconds: embeddedOffsetMs + extraOffsetMs,
+    );
 
     final result = <LrcLine>[];
     for (final rawLine in content.split('\n')) {
@@ -95,12 +121,15 @@ class Lyrics {
           // '5' -> 500ms, '05' -> 50ms, '050' -> 50ms
           millis = int.tryParse(fraction.padRight(3, '0').substring(0, 3)) ?? 0;
         }
-        result.add(
-          LrcLine(
-            Duration(minutes: minutes, seconds: seconds, milliseconds: millis),
-            text,
-          ),
-        );
+        var time =
+            Duration(
+              minutes: minutes,
+              seconds: seconds,
+              milliseconds: millis,
+            ) -
+            totalOffset;
+        if (time < Duration.zero) time = Duration.zero;
+        result.add(LrcLine(time, text));
       }
     }
 
