@@ -27,9 +27,11 @@ import 'package:flutter/widgets.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:nanoid/main.dart' show logger;
+import 'package:nanoid/models/lyrics.dart';
 import 'package:nanoid/services/data_manager.dart';
 import 'package:nanoid/services/io_service.dart';
 import 'package:nanoid/services/lyrics_manager.dart';
+import 'package:nanoid/services/nanoid/offline_lyrics_service.dart';
 import 'package:nanoid/services/playlists_manager.dart';
 import 'package:nanoid/services/proxy_manager.dart';
 import 'package:nanoid/services/settings_manager.dart';
@@ -62,7 +64,7 @@ dynamic nextRecommendedSong;
 var _songLikeUpdateToken = 0;
 final _latestSongLikeUpdateTokens = <String, int>{};
 
-final lyrics = ValueNotifier<String?>(null);
+final lyrics = ValueNotifier<Lyrics?>(null);
 String? lastFetchedLyrics;
 
 void reloadSongLibraryStateFromStorage() {
@@ -701,24 +703,83 @@ Future<Map<String, dynamic>> getSongDetails(
   }
 }
 
-Future<String?> getSongLyrics(String? artist, String title) async {
-  if (artist == null) return null;
-  if (lastFetchedLyrics != '$artist - $title') {
-    lyrics.value = null;
-    var _lyrics = await LyricsManager().fetchLyrics(artist, title);
-    if (_lyrics != null) {
-      _lyrics = _lyrics.replaceAll(RegExp(r'\n{4}'), '\n\n');
-      _lyrics = _lyrics.replaceAll(RegExp(r'\n{2}'), '\n');
-      lyrics.value = _lyrics;
-    } else {
-      return null;
-    }
+/// Resolves lyrics for a track, preferring anything already cached offline.
+///
+/// Order of preference:
+///   1. lyrics cached on disk for [songId] - works with no network at all
+///   2. a live lookup (LRCLIB first, then the legacy plain-text scrapers)
+///
+/// A successful live lookup for a downloaded track is written back to the
+/// offline cache, so playing a track online effectively warms it for later.
+Future<Lyrics?> getSongLyrics({
+  required String title,
+  String? artist,
+  String? songId,
+  String? album,
+  Duration? duration,
+}) async {
+  if (artist == null || artist.isEmpty) return null;
 
-    lastFetchedLyrics = '$artist - $title';
-    return _lyrics;
+  final cacheKey = '${songId ?? ''}|$artist - $title';
+  if (lastFetchedLyrics == cacheKey && lyrics.value != null) {
+    return lyrics.value;
   }
 
-  return lyrics.value;
+  lyrics.value = null;
+
+  // 1. offline cache
+  if (songId != null && songId.isNotEmpty) {
+    final cached = await OfflineLyricsService().read(songId);
+    if (cached != null) {
+      lyrics.value = cached;
+      lastFetchedLyrics = cacheKey;
+      return cached;
+    }
+    // Already looked up and found nothing; don't hammer the network again.
+    if (await OfflineLyricsService().hasResolved(songId)) {
+      lastFetchedLyrics = cacheKey;
+      return null;
+    }
+  }
+
+  // 2. live lookup
+  if (offlineMode.value) return null;
+
+  final fetched = await LyricsManager().fetchStructuredLyrics(
+    artist: artist,
+    title: title,
+    album: album,
+    duration: duration,
+  );
+  if (fetched == null) return null;
+
+  final normalised = fetched.isSynced
+      ? fetched
+      : Lyrics.plain(
+          fetched.content
+              .replaceAll(RegExp(r'\n{4}'), '\n\n')
+              .replaceAll(RegExp(r'\n{2}'), '\n'),
+          source: fetched.source,
+        );
+
+  lyrics.value = normalised;
+  lastFetchedLyrics = cacheKey;
+
+  // Warm the offline cache for tracks the user has downloaded.
+  if (songId != null && songId.isNotEmpty && isSongAlreadyOffline(songId)) {
+    unawaited(
+      OfflineLyricsService().cacheForSong(
+        songId: songId,
+        artist: artist,
+        title: title,
+        album: album,
+        duration: duration,
+        force: true,
+      ),
+    );
+  }
+
+  return normalised;
 }
 
 Future<bool> makeSongOffline(dynamic song) async {
@@ -836,6 +897,24 @@ Future<bool> makeSongOffline(dynamic song) async {
       );
     }
 
+    // Cache lyrics alongside the audio so they're available offline. Bounded
+    // and fully error-swallowing: a track with no lyrics, or a lyrics lookup
+    // that fails, must still count as a successful download.
+    try {
+      final songDuration = offlineSong['duration'] is int
+          ? Duration(seconds: offlineSong['duration'] as int)
+          : null;
+      await OfflineLyricsService().cacheForSong(
+        songId: ytid,
+        artist: offlineSong['artist']?.toString() ?? '',
+        title: offlineSong['title']?.toString() ?? '',
+        album: offlineSong['album']?.toString(),
+        duration: songDuration,
+      );
+    } catch (e, st) {
+      logger.log('Offline lyrics caching failed', error: e, stackTrace: st);
+    }
+
     return true;
   } catch (e, stackTrace) {
     logger.log('Error making song offline', error: e, stackTrace: stackTrace);
@@ -861,6 +940,16 @@ Future<bool> removeSongFromOffline(dynamic songId) async {
     } catch (e, stackTrace) {
       logger.log(
         'Error deleting artwork file',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+
+    try {
+      await OfflineLyricsService().remove(songId.toString());
+    } catch (e, stackTrace) {
+      logger.log(
+        'Error deleting offline lyrics',
         error: e,
         stackTrace: stackTrace,
       );

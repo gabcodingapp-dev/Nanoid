@@ -23,8 +23,37 @@ import 'dart:convert';
 
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
+import 'package:nanoid/models/lyrics.dart';
+import 'package:nanoid/services/nanoid/lrclib_service.dart';
 
 class LyricsManager {
+  /// Preferred entry point.
+  ///
+  /// LRCLIB is tried first because it is the only source that returns
+  /// synchronised (LRC) lyrics and is openly licensed for this use. The legacy
+  /// scrapers are kept purely as a plain-text fallback for tracks LRCLIB does
+  /// not cover.
+  Future<Lyrics?> fetchStructuredLyrics({
+    required String artist,
+    required String title,
+    String? album,
+    Duration? duration,
+  }) async {
+    final synced = await LrcLibService().fetch(
+      artist: artist,
+      title: title,
+      album: album,
+      duration: duration,
+    );
+    if (synced != null && !synced.isEmpty) return synced;
+
+    final plain = await fetchLyrics(artist, title);
+    if (plain != null && plain.trim().isNotEmpty) {
+      return Lyrics.plain(plain, source: 'fallback');
+    }
+    return null;
+  }
+
   Future<String?> fetchLyrics(String artistName, String title) async {
     // Remove Lyrics/Karaoke only from end of title
     if (title.endsWith(' Lyrics')) {

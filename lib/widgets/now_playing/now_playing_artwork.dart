@@ -25,10 +25,12 @@ import 'package:audio_service/audio_service.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/models/lyrics.dart';
 import 'package:nanoid/services/common_services.dart';
 import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/utilities/async_loader.dart';
 import 'package:nanoid/widgets/flip_card.dart';
+import 'package:nanoid/widgets/now_playing/lyrics_view.dart';
 import 'package:nanoid/widgets/song_artwork.dart';
 
 class NowPlayingArtwork extends StatelessWidget {
@@ -111,74 +113,54 @@ class NowPlayingArtwork extends StatelessWidget {
             ),
           ],
         ),
-        child: AsyncLoader<String?>(
-          future: getSongLyrics(metadata.artist, metadata.title),
-          emptyWidget: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  FluentIcons.text_quote_24_regular,
-                  size: 48,
-                  color: colorScheme.onSecondaryContainer.withValues(
-                    alpha: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  context.l10n!.lyricsNotAvailable,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSecondaryContainer,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+        child: AsyncLoader<Lyrics?>(
+          future: getSongLyrics(
+            songId: metadata.extras?['ytid']?.toString(),
+            artist: metadata.artist,
+            title: metadata.title,
+            album: metadata.album,
+            duration: metadata.duration,
           ),
-          errorBuilder: (ctx, error, stack) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  FluentIcons.text_quote_24_regular,
-                  size: 48,
-                  color: colorScheme.onSecondaryContainer.withValues(
-                    alpha: 0.5,
-                  ),
+          emptyWidget: _lyricsUnavailable(context, colorScheme),
+          errorBuilder: (ctx, error, stack) =>
+              _lyricsUnavailable(context, colorScheme),
+          builder: (context, lyrics) => lyrics == null
+              ? _lyricsUnavailable(context, colorScheme)
+              : LyricsView(
+                  lyrics: lyrics,
+                  textColor: colorScheme.onSecondaryContainer,
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  context.l10n!.lyricsNotAvailable,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSecondaryContainer,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          builder: (context, lyrics) => SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            physics: const BouncingScrollPhysics(),
-            child: Text(
-              lyrics ?? context.l10n!.lyricsNotAvailable,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSecondaryContainer,
-                height: 1.6,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
         ),
       ),
     );
   }
+}
+
+/// Shown when a track has no lyrics, the lookup failed, or the device is
+/// offline and nothing was cached. Never blocks playback or a download.
+Widget _lyricsUnavailable(BuildContext context, ColorScheme colorScheme) {
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          FluentIcons.text_quote_24_regular,
+          size: 48,
+          color: colorScheme.onSecondaryContainer.withValues(alpha: 0.5),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          context.l10n!.lyricsNotAvailable,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            color: colorScheme.onSecondaryContainer,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    ),
+  );
 }
 
 typedef _AudioQualityInfo = ({int bitrateKbps, String codec});
