@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import '../lyrics_manager.dart';
+import 'package:nanoid/services/lyrics_manager.dart';
 
 /// Nanoid by Gab — Offline Lyrics
 /// When a song is downloaded, we fetch its lyrics and cache them in Hive
