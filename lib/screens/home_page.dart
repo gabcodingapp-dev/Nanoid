@@ -39,6 +39,8 @@ import 'package:nanoid/widgets/mini_player_bottom_space.dart';
 import 'package:nanoid/widgets/playlist_cube.dart';
 import 'package:nanoid/widgets/section_header.dart';
 import 'package:nanoid/widgets/song_bar.dart';
+import 'package:nanoid/widgets/song_card.dart';
+import 'package:nanoid/widgets/spinner.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -107,9 +109,10 @@ class _HomePageState extends State<HomePage> {
                 );
               },
             ),
+            _buildQuickPicksSection(),
+            _buildRecentlyPlayedSection(),
             _buildSuggestedPlaylists(playlistHeight),
             _buildSuggestedPlaylists(playlistHeight, showOnlyLiked: true),
-            _buildRecentlyPlayedSection(),
             _buildCurrentMonthRecapSection(),
             _buildRecommendedSongsSection(),
             const MiniPlayerBottomSpace(),
@@ -212,37 +215,36 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Quick "pick up where you left off" list.
-  ///
-  /// Capped at [_recentlyPlayedLimit] so the home screen stays scannable; the
-  /// full history already has its own page. Hidden entirely when empty so new
-  /// installs don't show a dead section.
-  static const int _recentlyPlayedLimit = 5;
+  /// How many tracks each artwork shelf shows before it stops.
+  static const int _shelfLimit = 12;
 
+  /// Artwork shelf of the last things played.
+  ///
+  /// Hidden entirely when empty so a fresh install doesn't open on a dead
+  /// section.
   Widget _buildRecentlyPlayedSection() {
     return ValueListenableBuilder<List>(
       valueListenable: userRecentlyPlayed,
       builder: (context, recentlyPlayed, _) {
         if (recentlyPlayed.isEmpty) return const SizedBox.shrink();
 
-        final songs = recentlyPlayed.length > _recentlyPlayedLimit
-            ? recentlyPlayed.sublist(0, _recentlyPlayedLimit)
+        final songs = recentlyPlayed.length > _shelfLimit
+            ? recentlyPlayed.sublist(0, _shelfLimit)
             : recentlyPlayed;
         final title = context.l10n!.recentlyPlayed;
 
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SectionHeader(
               title: title,
               icon: FluentIcons.history_24_filled,
               actionButton: IconButton(
                 tooltip: title,
-                onPressed: () async {
-                  await audioHandler.playPlaylistSong(
-                    playlist: {'title': title, 'list': songs},
-                    songIndex: 0,
-                  );
-                },
+                onPressed: () => audioHandler.playPlaylistSong(
+                  playlist: {'title': title, 'list': songs},
+                  songIndex: 0,
+                ),
                 icon: Icon(
                   FluentIcons.play_circle_24_filled,
                   color: Theme.of(context).colorScheme.primary,
@@ -250,23 +252,61 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: songs.length,
-              itemBuilder: (context, index) {
-                final borderRadius = getItemBorderRadius(index, songs.length);
-                return RepaintBoundary(
-                  key: listItemKey('home_recent', index, songs[index]),
-                  child: SongBar(
-                    songs[index],
-                    true,
-                    isRecentSong: true,
-                    borderRadius: borderRadius,
-                  ),
-                );
-              },
+            SongShelf(
+              songs: songs,
+              onPlay: (index) => audioHandler.playPlaylistSong(
+                playlist: {'title': title, 'list': songs},
+                songIndex: index,
+              ),
             ),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Artwork-led entry point into the recommendations, mirroring how the rest
+  /// of the app already presents playlists.
+  Widget _buildQuickPicksSection() {
+    return AsyncLoader<List<dynamic>>(
+      future: _recommendedSongsFuture,
+      loadingWidget: const SizedBox(height: 210, child: Center(child: Spinner())),
+      builder: (context, data) {
+        if (data.isEmpty) return const SizedBox.shrink();
+        final songs = data.length > _shelfLimit
+            ? data.sublist(0, _shelfLimit)
+            : data;
+        const title = 'Quick picks';
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionHeader(
+              title: title,
+              icon: FluentIcons.flash_24_filled,
+              actionButton: IconButton(
+                tooltip: title,
+                onPressed: () => audioHandler.playPlaylistSong(
+                  playlist: {'title': title, 'list': songs},
+                  songIndex: 0,
+                ),
+                icon: Icon(
+                  FluentIcons.play_circle_24_filled,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 30,
+                ),
+              ),
+            ),
+            SongShelf(
+              songs: songs,
+              cardSize: 164,
+              onPlay: (index) => audioHandler.playPlaylistSong(
+                playlist: {'title': title, 'list': songs},
+                songIndex: index,
+              ),
+            ),
+            const SizedBox(height: 8),
           ],
         );
       },
