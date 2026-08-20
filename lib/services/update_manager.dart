@@ -36,8 +36,13 @@ import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/utilities/url_launcher.dart';
 import 'package:nanoid/widgets/auto_format_text.dart';
 
-const String checkUrl =
-    'https://raw.githubusercontent.com/gabcodingapp-dev/Nanoid/update/check.json';
+/// Update checks read the GitHub Releases API directly.
+///
+/// The previous implementation first fetched a hand-maintained `check.json`
+/// from an `update` branch. That branch was never created for this repo, so
+/// every launch logged a 404 and update checks silently never worked. The
+/// Releases API is already the source of truth for the APK, so there is no
+/// reason to maintain a second manifest.
 const String releasesUrl =
     'https://api.github.com/repos/gabcodingapp-dev/Nanoid/releases/latest';
 const String downloadUrlKey = 'url';
@@ -46,34 +51,38 @@ const String downloadFilename = 'Nanoid.apk';
 
 Future<void> checkAppUpdates() async {
   try {
-    final response = await http.get(Uri.parse(checkUrl));
-
-    if (response.statusCode != 200) {
-      logger.log(
-        'Fetch update API (checkUrl) call returned status code ${response.statusCode}',
-      );
-      return;
-    }
-
-    final map = json.decode(response.body) as Map<String, dynamic>;
-    announcementURL.value = map['announcementurl'];
-    final latestVersion = map['version'].toString();
-
-    if (!isLatestVersionHigher(appVersion, latestVersion)) {
-      return;
-    }
-
     final releasesRequest = await http.get(Uri.parse(releasesUrl));
+
+    // 404 simply means no release has been published yet, which is a normal
+    // state for a young repo rather than an error worth surfacing.
+    if (releasesRequest.statusCode == 404) return;
 
     if (releasesRequest.statusCode != 200) {
       logger.log(
-        'Fetch update API (releasesUrl) call returned status code ${response.statusCode}',
+        'Fetch releases API returned status code '
+        '${releasesRequest.statusCode}',
       );
       return;
     }
 
     final releasesResponse =
         json.decode(releasesRequest.body) as Map<String, dynamic>;
+
+    if (releasesResponse['draft'] == true ||
+        releasesResponse['prerelease'] == true) {
+      return;
+    }
+
+    // Tags are conventionally 'v1.2.3'; compare on the bare number.
+    final latestVersion = (releasesResponse['tag_name'] ?? '')
+        .toString()
+        .replaceFirst(RegExp('^v', caseSensitive: false), '')
+        .trim();
+
+    if (latestVersion.isEmpty ||
+        !isLatestVersionHigher(appVersion, latestVersion)) {
+      return;
+    }
 
     await showDialog(
       context: NavigationManager().context,
@@ -270,31 +279,9 @@ Future<String> getDownloadUrl(Map<String, dynamic> map) async {
   return url;
 }
 
-/// Fetch only the announcement URL from the `check.json` file and set the
-/// global `announcementURL` ValueNotifier. This does not trigger releases
-/// fetching or any update dialogs/downloads and is safe to call for F‑Droid
-/// builds where update prompts are not allowed.
-Future<void> fetchAnnouncementOnly() async {
-  try {
-    final response = await http.get(Uri.parse(checkUrl));
-
-    if (response.statusCode != 200) {
-      logger.log(
-        'Fetch announcement (checkUrl) call returned status code ${response.statusCode}',
-      );
-      return;
-    }
-
-    final map = json.decode(response.body) as Map<String, dynamic>;
-    final ann = map['announcementurl'];
-    if (ann != null) {
-      announcementURL.value = ann.toString();
-    }
-  } catch (e, stackTrace) {
-    logger.log(
-      'Error in fetchAnnouncementOnly',
-      error: e,
-      stackTrace: stackTrace,
-    );
-  }
-}
+/// Announcements were served from the same `check.json` manifest that no
+/// longer exists, so this is now a no-op kept for call-site compatibility.
+///
+/// Nanoid has no announcement channel; if one is ever added it should read
+/// from a real endpoint rather than a branch-hosted JSON file.
+Future<void> fetchAnnouncementOnly() async {}
