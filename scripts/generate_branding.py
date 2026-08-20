@@ -19,9 +19,9 @@ import os
 
 import cairosvg
 
-INK = "#111111"      # background / brand dark
+INK = "#0B0B0F"      # near-black, violet-leaning
 MARK = "#FFFFFF"     # the letterform
-ACCENT = "#FF4081"   # spindle dot
+ACCENT = "#8B5CF6"   # Violet Radiant spindle
 
 # --- glyph geometry -------------------------------------------------------
 CX, CY, R, W = 54, 42, 15, 8.5      # bowl centre, radius, stroke weight
