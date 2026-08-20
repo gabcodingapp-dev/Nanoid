@@ -54,7 +54,7 @@ final liquidGlassEnabled = ValueNotifier<bool>(
 /// Fluid: an exclusive monochrome theme with a slow-moving liquid backdrop.
 /// Overrides the accent colour entirely while active.
 final fluidThemeEnabled = ValueNotifier<bool>(
-  Hive.box('settings').get('fluidThemeEnabled', defaultValue: false),
+  Hive.box('settings').get('fluidThemeEnabled', defaultValue: true),
 );
 
 /// Fluid Motion (Beta): the backdrop leans with the device via the

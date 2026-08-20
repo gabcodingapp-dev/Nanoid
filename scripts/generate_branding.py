@@ -19,15 +19,15 @@ import os
 
 import cairosvg
 
-INK = "#0B0B0F"      # near-black, violet-leaning
+INK = "#8B5CF6"      # Violet Radiant plate
 MARK = "#FFFFFF"     # the letterform
-ACCENT = "#8B5CF6"   # Violet Radiant spindle
+ACCENT = "#4C1D95"   # deep violet spindle, reads as a record hole
 
 # --- glyph geometry -------------------------------------------------------
-CX, CY, R, W = 54, 42, 15, 8.5      # bowl centre, radius, stroke weight
+CX, CY, R, W = 54, 42, 15, 9.5      # bowl centre, radius, stroke weight
 STEM_X = CX + R                     # stem is tangent to the bowl
 STEM_TOP, STEM_BOT = CY, 70
-SPINDLE_R = 4.2
+SPINDLE_R = 4.6
 
 
 def glyph(mark_color, accent_color):

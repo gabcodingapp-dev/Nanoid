@@ -9,17 +9,17 @@
     <path
         android:pathData="M39,42 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="8.5"
+        android:strokeWidth="9.5"
         android:strokeLineCap="round" />
     <path
         android:pathData="M69,42 L69,70"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="8.5"
+        android:strokeWidth="9.5"
         android:strokeLineCap="round" />
     <path
         android:pathData="M69,70 C69,79 61,82 50,78.5"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="8.5"
+        android:strokeWidth="9.5"
         android:strokeLineCap="round" />
     <path
         android:pathData="M54,37.8 a4.2,4.2 0 1,0 0,8.4 a4.2,4.2 0 1,0 0,-8.4"
