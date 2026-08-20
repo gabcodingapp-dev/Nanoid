@@ -49,7 +49,7 @@ import 'package:nanoid/utilities/sharing_intent.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
-late MusifyAudioHandler audioHandler;
+late NanoidAudioHandler audioHandler;
 late StreamSubscription<String?> sharingIntentSubscription;
 
 final logger = Logger();
@@ -58,8 +58,8 @@ final appLinks = AppLinks();
 bool isFdroidBuild = false;
 bool isUpdateChecked = false;
 
-class Musify extends StatefulWidget {
-  const Musify({super.key});
+class Nanoid extends StatefulWidget {
+  const Nanoid({super.key});
 
   static Future<void> updateAppState(
     BuildContext context, {
@@ -68,7 +68,7 @@ class Musify extends StatefulWidget {
     Color? newAccentColor,
     bool? useSystemColor,
   }) async {
-    context.findAncestorStateOfType<_MusifyState>()!.changeSettings(
+    context.findAncestorStateOfType<_NanoidState>()!.changeSettings(
       newThemeMode: newThemeMode,
       newLocale: newLocale,
       newAccentColor: newAccentColor,
@@ -77,10 +77,10 @@ class Musify extends StatefulWidget {
   }
 
   @override
-  _MusifyState createState() => _MusifyState();
+  _NanoidState createState() => _NanoidState();
 }
 
-class _MusifyState extends State<Musify> with WidgetsBindingObserver {
+class _NanoidState extends State<Nanoid> with WidgetsBindingObserver {
   void changeSettings({
     ThemeMode? newThemeMode,
     Locale? newLocale,
@@ -270,7 +270,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initialisation();
 
-  runApp(const Musify());
+  runApp(const Nanoid());
 }
 
 Future<void> initialisation() async {
@@ -285,10 +285,10 @@ Future<void> initialisation() async {
     ]);
 
     audioHandler = await AudioService.init(
-      builder: MusifyAudioHandler.new,
+      builder: NanoidAudioHandler.new,
       config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.gokadzev.musify',
-        androidNotificationChannelName: 'Musify',
+        androidNotificationChannelId: 'com.gab.nanoid',
+        androidNotificationChannelName: 'Nanoid',
         androidNotificationIcon: 'drawable/ic_launcher_foreground',
         androidShowNotificationBadge: true,
         androidStopForegroundOnPause: false,
@@ -322,7 +322,7 @@ Future<void> initialisation() async {
 }
 
 void handleIncomingLink(Uri? uri) async {
-  if (uri == null || uri.scheme != 'musify' || uri.host != 'playlist') return;
+  if (uri == null || uri.scheme != 'nanoid' || uri.host != 'playlist') return;
 
   if (uri.pathSegments.length < 2 || uri.pathSegments[0] != 'custom') return;
 

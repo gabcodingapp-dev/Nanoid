@@ -397,7 +397,7 @@ class SettingsPage extends StatelessWidget {
                 themeMode = getThemeMode(themeModeSetting);
                 brightness = getBrightnessFromThemeMode(themeMode);
                 if (context.mounted) {
-                  await Musify.updateAppState(
+                  await Nanoid.updateAppState(
                     context,
                     newThemeMode: themeMode,
                     newLocale: languageSetting,
@@ -558,7 +558,7 @@ class SettingsPage extends StatelessWidget {
                   'accentColor',
                   color.toARGB32(),
                 );
-                Musify.updateAppState(
+                Nanoid.updateAppState(
                   context,
                   newAccentColor: color,
                   useSystemColor: false,
@@ -619,7 +619,7 @@ class SettingsPage extends StatelessWidget {
             modeNames[mode.index],
             () {
               addOrUpdateData<int>('settings', 'themeIndex', mode.index);
-              Musify.updateAppState(context, newThemeMode: mode);
+              Nanoid.updateAppState(context, newThemeMode: mode);
               Navigator.pop(context);
             },
             themeMode == mode,
@@ -658,7 +658,7 @@ class SettingsPage extends StatelessWidget {
               'languageCode',
               newLocaleFullCode,
             );
-            Musify.updateAppState(context, newLocale: newLocale);
+            Nanoid.updateAppState(context, newLocale: newLocale);
             showToast(context, context.l10n!.languageMsg);
             Navigator.pop(context);
           }, activeLanguageFullCode == newLocaleFullCode);
@@ -709,7 +709,7 @@ class SettingsPage extends StatelessWidget {
   void _toggleSystemColor(BuildContext context, bool value) {
     addOrUpdateData<bool>('settings', 'useSystemColor', value);
     useSystemColor.value = value;
-    Musify.updateAppState(
+    Nanoid.updateAppState(
       context,
       newAccentColor: primaryColorSetting,
       useSystemColor: value,
@@ -720,7 +720,7 @@ class SettingsPage extends StatelessWidget {
   void _togglePureBlack(BuildContext context, bool value) {
     addOrUpdateData<bool>('settings', 'usePureBlackColor', value);
     usePureBlackColor.value = value;
-    Musify.updateAppState(context);
+    Nanoid.updateAppState(context);
     showToast(context, context.l10n!.settingChangedMsg);
   }
 

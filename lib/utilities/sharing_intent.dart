@@ -27,7 +27,7 @@ final _youtubeLinkRegex = RegExp(r'(youtube\.com|youtu\.be)');
 
 Future<void> handleYoutubeSharedTextIntent(
   String? value, {
-  required MusifyAudioHandler audioHandler,
+  required NanoidAudioHandler audioHandler,
   required void Function(Object error, StackTrace stackTrace) onError,
 }) async {
   if (value == null || !_youtubeLinkRegex.hasMatch(value)) {
@@ -49,7 +49,7 @@ Future<void> handleYoutubeSharedTextIntent(
 
 Future<void> consumeYoutubeSharedTextIntent(
   String? value, {
-  required MusifyAudioHandler audioHandler,
+  required NanoidAudioHandler audioHandler,
   required void Function(Object error, StackTrace stackTrace) onError,
 }) async {
   if (value == null || value.isEmpty) {

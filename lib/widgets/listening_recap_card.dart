@@ -159,7 +159,7 @@ class _RecapBrandHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Musify',
+                      'Nanoid',
                       maxLines: 1,
                       style: TextStyle(
                         color: colorScheme.onSecondaryContainer,

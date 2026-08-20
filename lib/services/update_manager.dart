@@ -36,12 +36,12 @@ import 'package:nanoid/utilities/url_launcher.dart';
 import 'package:nanoid/widgets/auto_format_text.dart';
 
 const String checkUrl =
-    'https://raw.githubusercontent.com/gokadzev/Musify/update/check.json';
+    'https://raw.githubusercontent.com/gabcodingapp-dev/Nanoid/update/check.json';
 const String releasesUrl =
-    'https://api.github.com/repos/gokadzev/Musify/releases/latest';
+    'https://api.github.com/repos/gabcodingapp-dev/Nanoid/releases/latest';
 const String downloadUrlKey = 'url';
 const String downloadUrlArm64Key = 'arm64url';
-const String downloadFilename = 'Musify.apk';
+const String downloadFilename = 'Nanoid.apk';
 
 Future<void> checkAppUpdates() async {
   try {

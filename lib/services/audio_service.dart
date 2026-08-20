@@ -37,8 +37,8 @@ import 'package:nanoid/utilities/mediaitem.dart';
 import 'package:nanoid/utilities/queue_entry_utils.dart';
 import 'package:rxdart/rxdart.dart';
 
-class MusifyAudioHandler extends BaseAudioHandler {
-  MusifyAudioHandler() {
+class NanoidAudioHandler extends BaseAudioHandler {
+  NanoidAudioHandler() {
     _androidEqualizer = AndroidEqualizer();
     audioPlayer = AudioPlayer(
       audioPipeline: AudioPipeline(androidAudioEffects: [_androidEqualizer]),
@@ -1479,7 +1479,7 @@ class MusifyAudioHandler extends BaseAudioHandler {
     return mapToMediaItem(normalisedSong).copyWith(
       id: _recentMediaId(ytid),
       displayTitle: normalisedSong['title']?.toString(),
-      displaySubtitle: artist.isEmpty ? 'Musify' : artist,
+      displaySubtitle: artist.isEmpty ? 'Nanoid' : artist,
     );
   }
 
@@ -1489,7 +1489,7 @@ class MusifyAudioHandler extends BaseAudioHandler {
 
     await playPlaylistSong(
       playlist: {
-        'title': 'Musify',
+        'title': 'Nanoid',
         'source': 'system-recent',
         'list': [normalisedSong],
       },
