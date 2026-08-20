@@ -273,8 +273,6 @@
   "timeMachine": "Time Machine",
   "tools": "도구",
   "topSongs": "Top songs",
-  "translate": "Translate",
-  "translateDescription": "Help translate Nanoid into your language on Crowdin.",
   "understand": "이해했음",
   "undo": "실행 취소",
   "unpinFromLibrary": "Unpin from library",

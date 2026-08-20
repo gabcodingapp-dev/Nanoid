@@ -273,8 +273,6 @@
   "timeMachine": "时光机",
   "tools": "工具",
   "topSongs": "Top songs",
-  "translate": "翻译",
-  "translateDescription": "帮助我们在 Crowdin 上将 Nanoid 翻译成您的语言。",
   "understand": "我知道了",
   "undo": "撤销",
   "unpinFromLibrary": "从媒体库取消固定",

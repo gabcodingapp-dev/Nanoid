@@ -533,13 +533,6 @@ class SettingsPage extends StatelessWidget {
           onTap: () => NavigationManager.router.go('/settings/license'),
         ),
         CustomBar(
-          context.l10n!.translate,
-          FluentIcons.translate_24_regular,
-          description: context.l10n!.translateDescription,
-          onTap: () =>
-              launchURL(Uri.parse('https://crowdin.com/project/musify')),
-        ),
-        CustomBar(
           '${context.l10n!.copyLogs} (${logger.getLogCount()})',
           FluentIcons.error_circle_24_regular,
           onTap: () async => showToast(context, await logger.copyLogs(context)),
