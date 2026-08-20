@@ -23,7 +23,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.gokadzev.musify"
+    namespace = "com.gab.nanoid"
     compileSdk = 36
     ndkVersion = "28.2.13676358"
 
@@ -48,7 +48,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.gokadzev.musify"
+        applicationId = "com.gab.nanoid"
         minSdk = 24
         targetSdk = 36
         versionCode = flutter.versionCode
@@ -68,15 +68,22 @@ android {
         }
     }
 
+    // Release signing material is injected by CI (key.jks + key.properties) and
+    // is never committed. When it is absent - local builds, forks, PR runs - we
+    // fall back to the debug key so `assembleRelease` still produces an
+    // installable APK instead of failing the whole build.
+    val releaseKeystore = rootProject.file("key.jks")
+    val hasReleaseSigning =
+        releaseKeystore.exists() && keystoreProperties["keyAlias"] != null
+
     signingConfigs {
         create("release") {
-            // From decoded key
-            storeFile = file("key.jks")
-
-            // From key.properties
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storePassword = keystoreProperties["storePassword"] as String?
+            if (hasReleaseSigning) {
+                storeFile = releaseKeystore
+                keyAlias = keystoreProperties["keyAlias"] as String?
+                keyPassword = keystoreProperties["keyPassword"] as String?
+                storePassword = keystoreProperties["storePassword"] as String?
+            }
         }
     }
 
@@ -93,7 +100,12 @@ android {
 
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.lifecycle("No release keystore found - signing with the debug key.")
+                signingConfigs.getByName("debug")
+            }
             isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

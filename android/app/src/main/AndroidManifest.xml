@@ -1,6 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.gab.nanoid">
+    xmlns:tools="http://schemas.android.com/tools">
 
 
     <!-- Permissions -->
@@ -30,14 +29,14 @@
     </queries>
 
     <application
-        android:label="Musify"
+        android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
 
-        <!-- AudioServiceActivity -->
+        <!-- MainActivity extends AudioServiceActivity (see MainActivity.kt) -->
         <activity
-            android:name="com.ryanheise.audioservice.AudioServiceActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:allowCrossUidActivitySwitchFromBelow="false"
@@ -68,7 +67,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="musify"
+                    android:scheme="nanoid"
                     android:host="playlist"
                     android:pathPattern="/custom/.*" />
             </intent-filter>
