@@ -19,9 +19,11 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      # Do NOT use flutter-version-file here: it forwards pubspec's caret
+      # constraint ("^3.47.0") verbatim and the action cannot resolve it.
+      # Latest stable already satisfies the constraint.
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version-file: pubspec.yaml
           channel: stable
           cache: true
 
