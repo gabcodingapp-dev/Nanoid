@@ -36,8 +36,8 @@ class LiquidGlass extends StatelessWidget {
     super.key,
     required this.child,
     this.borderRadius,
-    this.blur = 22,
-    this.tintOpacity = 0.16,
+    this.blur = 30,
+    this.tintOpacity = 0.10,
     this.showRim = true,
     this.padding,
   });
@@ -82,16 +82,16 @@ class LiquidGlass extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                sheen.withValues(alpha: isDark ? 0.14 : 0.55),
-                base,
+                sheen.withValues(alpha: isDark ? 0.22 : 0.62),
+                sheen.withValues(alpha: isDark ? 0.06 : 0.24),
                 base,
               ],
-              stops: const [0, 0.45, 1],
+              stops: const [0, 0.22, 1],
             ),
             border: showRim
                 ? Border.all(
-                    color: sheen.withValues(alpha: isDark ? 0.16 : 0.6),
-                    width: 0.8,
+                    color: sheen.withValues(alpha: isDark ? 0.26 : 0.7),
+                    width: 1,
                   )
                 : null,
           ),
@@ -115,8 +115,8 @@ class LiquidGlassSurface extends StatelessWidget {
     required this.child,
     required this.fallback,
     this.borderRadius,
-    this.blur = 22,
-    this.tintOpacity = 0.16,
+    this.blur = 30,
+    this.tintOpacity = 0.10,
   });
 
   final Widget child;
