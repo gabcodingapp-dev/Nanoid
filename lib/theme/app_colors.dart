@@ -1,12 +1,12 @@
 /*
  *     Copyright (C) 2026 Valeri Gokadze
  *
- *     Musify is free software: you can redistribute it and/or modify
+ *     Nanoid is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  *
- *     Musify is distributed in the hope that it will be useful,
+ *     Nanoid is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -15,13 +15,20 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *
- *     For more information about Musify, including how to contribute,
- *     please visit: https://github.com/gokadzev/Musify
+ *     For more information about Nanoid, including how to contribute,
+ *     please visit: https://github.com/gabcodingapp-dev/Nanoid
  */
 
 import 'package:material_ui/material_ui.dart';
 
+/// Nanoid's signature accent. Radiant violet, used as the default seed.
+const Color violetRadiant = Color(0xFF8B5CF6);
+
 const availableColors = <Color>[
+  violetRadiant, // Violet Radiant (Nanoid default)
+  Color(0xFF7C3AED), // Violet Deep
+  Color(0xFFA78BFA), // Violet Soft
+  Color(0xFFC084FC), // Orchid
   Color(0xFF009688), // Material Teal
   Color(0xFF2196F3), // Material Blue
   Color(0xFFBA68C8), // Material Purple Light

@@ -1,12 +1,12 @@
 /*
  *     Copyright (C) 2026 Valeri Gokadze
  *
- *     Musify is free software: you can redistribute it and/or modify
+ *     Nanoid is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  *
- *     Musify is distributed in the hope that it will be useful,
+ *     Nanoid is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -15,8 +15,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *
- *     For more information about Musify, including how to contribute,
- *     please visit: https://github.com/gokadzev/Musify
+ *     For more information about Nanoid, including how to contribute,
+ *     please visit: https://github.com/gabcodingapp-dev/Nanoid
  */
 
 import 'package:audio_service/audio_service.dart';
@@ -48,6 +48,35 @@ final usePureBlackColor = ValueNotifier<bool>(
 /// read-back, so it is opt-in rather than something every device pays for.
 final liquidGlassEnabled = ValueNotifier<bool>(
   Hive.box('settings').get('liquidGlassEnabled', defaultValue: false),
+);
+
+/// Fluid: an exclusive monochrome theme with a slow-moving liquid backdrop.
+/// Overrides the accent colour entirely while active.
+final fluidThemeEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('fluidThemeEnabled', defaultValue: false),
+);
+
+/// Fluid Motion (Beta): the backdrop leans with the device via the
+/// accelerometer. Requires the Fluid theme.
+final fluidGyroEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('fluidGyroEnabled', defaultValue: false),
+);
+
+/// Fluid Rhythm (Beta): the backdrop pulses in time with playback.
+/// Requires the Fluid theme.
+final fluidRhythmEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('fluidRhythmEnabled', defaultValue: false),
+);
+
+/// Estimated tempo used by Fluid Rhythm, in beats per minute.
+final fluidRhythmBpm = ValueNotifier<int>(
+  Hive.box('settings').get('fluidRhythmBpm', defaultValue: 120),
+);
+
+/// Per-track lyric timing nudge, in milliseconds. Applied on top of any
+/// [offset:] tag already present in the LRC file.
+final lyricsOffsetMs = ValueNotifier<int>(
+  Hive.box('settings').get('lyricsOffsetMs', defaultValue: 0),
 );
 
 final offlineMode = ValueNotifier<bool>(
@@ -109,7 +138,7 @@ String offlineSortSetting = Hive.box('settings')
     .get('offlineSortType', defaultValue: OfflineSortType.default_.name);
 
 Color primaryColorSetting = Color(
-  Hive.box('settings').get('accentColor', defaultValue: 0xff91cef4),
+  Hive.box('settings').get('accentColor', defaultValue: 0xFF8B5CF6),
 );
 
 final shuffleNotifier = ValueNotifier<bool>(
