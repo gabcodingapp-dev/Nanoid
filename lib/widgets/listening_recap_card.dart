@@ -20,8 +20,8 @@
  */
 
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/extensions/l10n.dart';
-import 'package:musify/widgets/song_bar.dart';
+import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/widgets/song_bar.dart';
 
 const _musifyIconAsset = 'assets/icons/musify_icon.png';
 

@@ -24,8 +24,8 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/widgets/no_artwork_cube.dart';
-import 'package:musify/widgets/spinner.dart';
+import 'package:nanoid/widgets/no_artwork_cube.dart';
+import 'package:nanoid/widgets/spinner.dart';
 
 class SongArtworkWidget extends StatelessWidget {
   const SongArtworkWidget({

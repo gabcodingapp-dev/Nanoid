@@ -26,10 +26,10 @@ import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/extensions/l10n.dart';
-import 'package:musify/main.dart';
-import 'package:musify/widgets/confirmation_dialog.dart';
-import 'package:musify/widgets/no_artwork_cube.dart';
+import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/main.dart';
+import 'package:nanoid/widgets/confirmation_dialog.dart';
+import 'package:nanoid/widgets/no_artwork_cube.dart';
 
 class QueueWidget extends StatefulWidget {
   const QueueWidget({super.key, this.isBottomSheet = false});

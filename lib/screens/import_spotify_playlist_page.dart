@@ -4,14 +4,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/extensions/l10n.dart';
-import 'package:musify/main.dart' show logger;
-import 'package:musify/services/artist_service.dart' show ytMusicClient;
-import 'package:musify/services/playlists_manager.dart';
-import 'package:musify/utilities/flutter_toast.dart';
-import 'package:musify/utilities/formatter.dart';
-import 'package:musify/utilities/url_launcher.dart';
-import 'package:musify/widgets/mini_player.dart';
+import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/main.dart' show logger;
+import 'package:nanoid/services/artist_service.dart' show ytMusicClient;
+import 'package:nanoid/services/playlists_manager.dart';
+import 'package:nanoid/utilities/flutter_toast.dart';
+import 'package:nanoid/utilities/formatter.dart';
+import 'package:nanoid/utilities/url_launcher.dart';
+import 'package:nanoid/widgets/mini_player.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 class ImportSpotifyPlaylistPage extends StatefulWidget {

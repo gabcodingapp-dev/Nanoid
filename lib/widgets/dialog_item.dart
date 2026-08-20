@@ -21,7 +21,7 @@
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/constants/app_constants.dart';
+import 'package:nanoid/constants/app_constants.dart';
 
 class DialogItem extends StatelessWidget {
   const DialogItem({

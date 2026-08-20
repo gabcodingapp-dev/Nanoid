@@ -20,9 +20,9 @@
  */
 
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/extensions/l10n.dart';
-import 'package:musify/main.dart';
-import 'package:musify/widgets/spinner.dart';
+import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/main.dart';
+import 'package:nanoid/widgets/spinner.dart';
 
 Widget _defaultAsyncLoaderErrorBuilder(
   BuildContext context,

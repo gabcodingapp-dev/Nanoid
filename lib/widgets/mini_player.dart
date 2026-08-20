@@ -24,12 +24,12 @@ import 'dart:math' as math;
 import 'package:audio_service/audio_service.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/main.dart';
-import 'package:musify/models/full_player_state.dart';
-import 'package:musify/models/position_data.dart';
-import 'package:musify/screens/now_playing_page.dart';
-import 'package:musify/widgets/marquee.dart';
-import 'package:musify/widgets/song_artwork.dart';
+import 'package:nanoid/main.dart';
+import 'package:nanoid/models/full_player_state.dart';
+import 'package:nanoid/models/position_data.dart';
+import 'package:nanoid/screens/now_playing_page.dart';
+import 'package:nanoid/widgets/marquee.dart';
+import 'package:nanoid/widgets/song_artwork.dart';
 import 'package:rxdart/rxdart.dart';
 
 final Stream<FullPlayerState> _fullPlayerStateStream =

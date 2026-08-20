@@ -19,9 +19,9 @@
  *     please visit: https://github.com/gokadzev/Musify
  */
 
-import 'package:musify/services/audio_service.dart';
-import 'package:musify/services/common_services.dart';
-import 'package:musify/utilities/formatter.dart';
+import 'package:nanoid/services/audio_service.dart';
+import 'package:nanoid/services/common_services.dart';
+import 'package:nanoid/utilities/formatter.dart';
 
 final _youtubeLinkRegex = RegExp(r'(youtube\.com|youtu\.be)');
 

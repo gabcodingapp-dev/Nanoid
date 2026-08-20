@@ -27,19 +27,19 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/extensions/l10n.dart';
-import 'package:musify/main.dart';
-import 'package:musify/services/common_services.dart';
-import 'package:musify/services/playlists_manager.dart';
-import 'package:musify/services/router_service.dart';
-import 'package:musify/services/settings_manager.dart';
-import 'package:musify/utilities/flutter_toast.dart';
-import 'package:musify/utilities/formatter.dart';
-import 'package:musify/utilities/playlist_dialogs.dart';
-import 'package:musify/widgets/no_artwork_cube.dart';
-import 'package:musify/widgets/overflow_menu_button.dart';
-import 'package:musify/widgets/popup_menu_item.dart';
-import 'package:musify/widgets/rename_song_dialog.dart';
+import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/main.dart';
+import 'package:nanoid/services/common_services.dart';
+import 'package:nanoid/services/playlists_manager.dart';
+import 'package:nanoid/services/router_service.dart';
+import 'package:nanoid/services/settings_manager.dart';
+import 'package:nanoid/utilities/flutter_toast.dart';
+import 'package:nanoid/utilities/formatter.dart';
+import 'package:nanoid/utilities/playlist_dialogs.dart';
+import 'package:nanoid/widgets/no_artwork_cube.dart';
+import 'package:nanoid/widgets/overflow_menu_button.dart';
+import 'package:nanoid/widgets/popup_menu_item.dart';
+import 'package:nanoid/widgets/rename_song_dialog.dart';
 
 List<PopupMenuEntry<String>> _buildSongMenuItems({
   required BuildContext context,

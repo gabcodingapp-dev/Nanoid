@@ -21,9 +21,9 @@
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/extensions/l10n.dart';
-import 'package:musify/utilities/flutter_toast.dart';
-import 'package:musify/utilities/playlist_dialogs.dart';
+import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/utilities/flutter_toast.dart';
+import 'package:nanoid/utilities/playlist_dialogs.dart';
 
 /// Adds every song of a resolved playlist to one of the user's playlists.
 ///

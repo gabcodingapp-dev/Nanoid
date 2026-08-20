@@ -21,8 +21,8 @@
 
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/constants/app_constants.dart';
-import 'package:musify/services/settings_manager.dart';
+import 'package:nanoid/constants/app_constants.dart';
+import 'package:nanoid/services/settings_manager.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 BorderRadius getItemBorderRadius(

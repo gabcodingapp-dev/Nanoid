@@ -21,9 +21,9 @@
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/extensions/l10n.dart';
-import 'package:musify/services/artist_service.dart';
-import 'package:musify/utilities/artwork_provider.dart';
+import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/services/artist_service.dart';
+import 'package:nanoid/utilities/artwork_provider.dart';
 
 class ArtistBar extends StatelessWidget {
   const ArtistBar({

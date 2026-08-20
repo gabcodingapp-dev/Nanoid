@@ -19,15 +19,15 @@
  *     please visit: https://github.com/gokadzev/Musify
  */
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/constants/app_constants.dart';
-import 'package:musify/database/radio_stations.db.dart';
-import 'package:musify/extensions/l10n.dart';
-import 'package:musify/main.dart';
-import 'package:musify/models/radio_model.dart';
-import 'package:musify/services/common_services.dart';
-import 'package:musify/utilities/flutter_toast.dart';
-import 'package:musify/widgets/mini_player_bottom_space.dart';
-import 'package:musify/widgets/radio_station_card.dart';
+import 'package:nanoid/constants/app_constants.dart';
+import 'package:nanoid/database/radio_stations.db.dart';
+import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/main.dart';
+import 'package:nanoid/models/radio_model.dart';
+import 'package:nanoid/services/common_services.dart';
+import 'package:nanoid/utilities/flutter_toast.dart';
+import 'package:nanoid/widgets/mini_player_bottom_space.dart';
+import 'package:nanoid/widgets/radio_station_card.dart';
 
 class RadioStationsPage extends StatelessWidget {
   const RadioStationsPage({super.key});

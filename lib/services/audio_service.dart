@@ -26,15 +26,15 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:hive/hive.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:musify/main.dart';
-import 'package:musify/models/position_data.dart';
-import 'package:musify/services/common_services.dart';
-import 'package:musify/services/data_manager.dart';
-import 'package:musify/services/listening_stats_service.dart';
-import 'package:musify/services/settings_manager.dart';
-import 'package:musify/utilities/map_utils.dart';
-import 'package:musify/utilities/mediaitem.dart';
-import 'package:musify/utilities/queue_entry_utils.dart';
+import 'package:nanoid/main.dart';
+import 'package:nanoid/models/position_data.dart';
+import 'package:nanoid/services/common_services.dart';
+import 'package:nanoid/services/data_manager.dart';
+import 'package:nanoid/services/listening_stats_service.dart';
+import 'package:nanoid/services/settings_manager.dart';
+import 'package:nanoid/utilities/map_utils.dart';
+import 'package:nanoid/utilities/mediaitem.dart';
+import 'package:nanoid/utilities/queue_entry_utils.dart';
 import 'package:rxdart/rxdart.dart';
 
 class MusifyAudioHandler extends BaseAudioHandler {

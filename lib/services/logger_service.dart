@@ -21,7 +21,7 @@
 
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/extensions/l10n.dart';
+import 'package:nanoid/extensions/l10n.dart';
 
 class Logger {
   String _logs = '';

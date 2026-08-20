@@ -20,7 +20,7 @@
  */
 
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/widgets/custom_search_bar.dart';
+import 'package:nanoid/widgets/custom_search_bar.dart';
 
 class SearchBarSection extends StatefulWidget {
   const SearchBarSection({

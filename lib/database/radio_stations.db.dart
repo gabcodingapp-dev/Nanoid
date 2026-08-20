@@ -19,7 +19,7 @@
  *     please visit: https://github.com/gokadzev/Musify
  */
 
-import 'package:musify/models/radio_model.dart';
+import 'package:nanoid/models/radio_model.dart';
 
 List<RadioStation> radioStationsDB = [
   const RadioStation(

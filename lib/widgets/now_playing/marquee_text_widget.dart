@@ -20,7 +20,7 @@
  */
 
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/widgets/marquee.dart';
+import 'package:nanoid/widgets/marquee.dart';
 
 class MarqueeTextWidget extends StatelessWidget {
   const MarqueeTextWidget({

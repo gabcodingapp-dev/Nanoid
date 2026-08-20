@@ -23,9 +23,9 @@ import 'dart:async';
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/extensions/l10n.dart';
-import 'package:musify/services/common_services.dart';
-import 'package:musify/services/playlists_manager.dart';
+import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/services/common_services.dart';
+import 'package:nanoid/services/playlists_manager.dart';
 
 /// Likes a playlist, an album or an artist, and follows the liked playlists so
 /// that the same one stays in sync wherever it is shown.

@@ -24,22 +24,22 @@ import 'dart:async';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/extensions/l10n.dart';
-import 'package:musify/services/artist_service.dart';
-import 'package:musify/services/common_services.dart';
-import 'package:musify/services/data_manager.dart';
-import 'package:musify/services/playlists_manager.dart';
-import 'package:musify/services/router_service.dart';
-import 'package:musify/utilities/artwork_provider.dart';
-import 'package:musify/utilities/flutter_toast.dart';
-import 'package:musify/utilities/offline_playlist_dialogs.dart';
-import 'package:musify/utilities/playlist_dialogs.dart';
-import 'package:musify/utilities/playlist_utils.dart';
-import 'package:musify/widgets/dialog_item.dart';
-import 'package:musify/widgets/edit_playlist_dialog.dart';
-import 'package:musify/widgets/overflow_menu_button.dart';
-import 'package:musify/widgets/popup_menu_item.dart';
-import 'package:musify/widgets/spinner.dart';
+import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/services/artist_service.dart';
+import 'package:nanoid/services/common_services.dart';
+import 'package:nanoid/services/data_manager.dart';
+import 'package:nanoid/services/playlists_manager.dart';
+import 'package:nanoid/services/router_service.dart';
+import 'package:nanoid/utilities/artwork_provider.dart';
+import 'package:nanoid/utilities/flutter_toast.dart';
+import 'package:nanoid/utilities/offline_playlist_dialogs.dart';
+import 'package:nanoid/utilities/playlist_dialogs.dart';
+import 'package:nanoid/utilities/playlist_utils.dart';
+import 'package:nanoid/widgets/dialog_item.dart';
+import 'package:nanoid/widgets/edit_playlist_dialog.dart';
+import 'package:nanoid/widgets/overflow_menu_button.dart';
+import 'package:nanoid/widgets/popup_menu_item.dart';
+import 'package:nanoid/widgets/spinner.dart';
 
 class PlaylistBar extends StatelessWidget {
   PlaylistBar(

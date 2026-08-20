@@ -21,12 +21,12 @@
 
 import 'dart:async';
 
-import 'package:musify/constants/artist_constants.dart';
-import 'package:musify/main.dart' show logger;
-import 'package:musify/services/data_manager.dart';
-import 'package:musify/services/proxy_manager.dart';
-import 'package:musify/utilities/app_utils.dart';
-import 'package:musify/utilities/formatter.dart';
+import 'package:nanoid/constants/artist_constants.dart';
+import 'package:nanoid/main.dart' show logger;
+import 'package:nanoid/services/data_manager.dart';
+import 'package:nanoid/services/proxy_manager.dart';
+import 'package:nanoid/utilities/app_utils.dart';
+import 'package:nanoid/utilities/formatter.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:youtube_music_explode_dart/youtube_music_explode_dart.dart';
 

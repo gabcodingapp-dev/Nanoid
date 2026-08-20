@@ -21,8 +21,8 @@
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/widgets/playlist_cube.dart';
-import 'package:musify/widgets/section_header.dart';
+import 'package:nanoid/widgets/playlist_cube.dart';
+import 'package:nanoid/widgets/section_header.dart';
 
 /// A titled row of artwork on the artist page: its releases, or the artists
 /// suggested next to it. Releases are shown square, artists round.

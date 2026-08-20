@@ -23,11 +23,11 @@ import 'dart:async';
 
 import 'package:hive/hive.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:musify/main.dart' show logger;
-import 'package:musify/services/data_manager.dart';
-import 'package:musify/services/settings_manager.dart';
-import 'package:musify/utilities/listening_stats_utils.dart';
-import 'package:musify/utilities/map_utils.dart';
+import 'package:nanoid/main.dart' show logger;
+import 'package:nanoid/services/data_manager.dart';
+import 'package:nanoid/services/settings_manager.dart';
+import 'package:nanoid/utilities/listening_stats_utils.dart';
+import 'package:nanoid/utilities/map_utils.dart';
 
 final listeningStatsService = ListeningStatsService();
 

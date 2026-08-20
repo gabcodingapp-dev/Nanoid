@@ -21,8 +21,8 @@
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/utilities/artwork_provider.dart';
-import 'package:musify/widgets/no_artwork_cube.dart';
+import 'package:nanoid/utilities/artwork_provider.dart';
+import 'package:nanoid/widgets/no_artwork_cube.dart';
 
 class PlaylistArtwork extends StatelessWidget {
   const PlaylistArtwork({

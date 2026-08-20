@@ -21,12 +21,12 @@
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/constants/app_constants.dart';
-import 'package:musify/extensions/l10n.dart';
-import 'package:musify/services/playlists_manager.dart';
-import 'package:musify/utilities/flutter_toast.dart';
-import 'package:musify/utilities/playlist_image_picker.dart';
-import 'package:musify/widgets/dialog_item.dart';
+import 'package:nanoid/constants/app_constants.dart';
+import 'package:nanoid/extensions/l10n.dart';
+import 'package:nanoid/services/playlists_manager.dart';
+import 'package:nanoid/utilities/flutter_toast.dart';
+import 'package:nanoid/utilities/playlist_image_picker.dart';
+import 'package:nanoid/widgets/dialog_item.dart';
 
 void showCreatePlaylistDialog(
   BuildContext context, {

@@ -20,7 +20,7 @@
  */
 
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/widgets/section_title.dart';
+import 'package:nanoid/widgets/section_title.dart';
 
 class SectionHeader extends StatelessWidget {
   const SectionHeader({

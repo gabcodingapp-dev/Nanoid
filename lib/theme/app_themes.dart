@@ -22,7 +22,7 @@
 import 'package:flutter/material.dart' as flutter;
 import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:musify/services/settings_manager.dart';
+import 'package:nanoid/services/settings_manager.dart';
 
 ThemeMode themeMode = getThemeMode(themeModeSetting);
 Brightness brightness = getBrightnessFromThemeMode(themeMode);

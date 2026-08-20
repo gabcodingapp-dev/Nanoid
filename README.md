@@ -1,118 +1,103 @@
 <div align="center">
-<img src="https://github.com/gokadzev/Musify/raw/master/.github/assets/Musify-banner.png" width="100%">
 
-# Musify
+  <img src="assets/icons/nanoid_icon.png" width="120" height="120" style="border-radius: 24px;" onerror="this.style.display='none'">
 
-Unlock the full potential of music: Stream effortlessly with one app!
+  # Nanoid
 
-[![Stars](https://img.shields.io/github/stars/gokadzev/Musify?style=flat-square&color=D3BEAB)](https://github.com/gokadzev/Musify/stargazers)
-[![Forks](https://img.shields.io/github/forks/gokadzev/Musify?style=flat-square&color=D3BEAB)](https://github.com/gokadzev/Musify/fork)
-[![Downloads](https://img.shields.io/github/downloads/gokadzev/Musify/total?style=flat-square&color=D3BEAB)](https://github.com/gokadzev/Musify/releases)
-[![GitHub release](https://img.shields.io/github/v/release/gokadzev/Musify?color=D3BEAB)](https://github.com/gokadzev/Musify/releases)
-[![License](https://img.shields.io/github/license/gokadzev/Musify?color=D3BEAB)](LICENSE)
+  ### Minimalist Music — by **Gab**
 
----
+  **Offline Lyrics • Minimal Splash • Clean Design • `com.gab.nanoid`**
 
-<a href="https://ko-fi.com/gokadzev" target="_blank" title="ko-fi">
-  <img src="https://github.com/user-attachments/assets/1c204507-d124-4b34-878b-96c39c9bb3f8"  alt="ko-fi badge" style="width: 150px;">
-</a>
+  <p>
+    <a href="https://github.com/gabcodingapp-dev/Nanoid/releases/latest"><img src="https://img.shields.io/github/v/release/gabcodingapp-dev/Nanoid?label=Release&color=111111&style=for-the-badge"></a>
+    <a href="https://github.com/gabcodingapp-dev/Nanoid/releases"><img src="https://img.shields.io/github/downloads/gabcodingapp-dev/Nanoid/total?color=000000&style=for-the-badge&label=Downloads"></a>
+    <a href="https://github.com/gabcodingapp-dev/Nanoid/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/gabcodingapp-dev/Nanoid/build.yml?label=Build&color=333&style=for-the-badge"></a>
+  </p>
 
+  <p>
+    <img src="https://img.shields.io/badge/Flutter-3.47-02569B?style=flat-square&logo=flutter&logoColor=white">
+    <img src="https://img.shields.io/badge/Package-com.gab.nanoid-000?style=flat-square">
+    <img src="https://img.shields.io/badge/License-GPL--3.0-00C853?style=flat-square">
+    <img src="https://img.shields.io/badge/By-Gab-FF4081?style=flat-square">
+  </p>
 
-
----
-
-## Features
-
-<center>
-
-Online song search with suggestions <br/>
-Offline listening support <br/>
-Import & export your data and never lose it <br/>
-Add custom playlists with link <br/>
-Optimized sound experience <br/>
-SponsorBlock support <br/>
-Lyrics support <br/>
-No ads <br/>
-No subscriptions <br/>
-Built-in updater <br/>
-Built-in equalizer with presets <br/>
-21 supported languages <br/>
-Material UI & accent colors & dynamic colors (Android 12+) <br/>
-
-</center>
-
+</div>
 
 ---
 
-## Screenshots
-
-| ![Screenshot 1](https://raw.githubusercontent.com/gokadzev/Musify/master/fastlane/metadata/android/en-US/images/phoneScreenshots/01.jpg) | ![Screenshot 2](https://raw.githubusercontent.com/gokadzev/Musify/master/fastlane/metadata/android/en-US/images/phoneScreenshots/02.jpg) | ![Screenshot 3](https://raw.githubusercontent.com/gokadzev/Musify/master/fastlane/metadata/android/en-US/images/phoneScreenshots/03.jpg) | ![Screenshot 4](https://raw.githubusercontent.com/gokadzev/Musify/master/fastlane/metadata/android/en-US/images/phoneScreenshots/04.jpg) |
-|----------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
-
+> [!TIP]
+> **Forked from Musify, reimagined as Nanoid by Gab — minimalist, faster, with offline lyrics.**
 
 ---
 
-## Download
+## ✨ What's New in Nanoid
 
-
-[<img src="https://github.com/gokadzev/Musify/raw/master/.github/assets/get-it-on-github.png" alt="Get it on Github" height="80">](https://github.com/gokadzev/Musify/releases/latest)
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on Fdroid" height="80">](https://f-droid.org/packages/com.gokadzev.musify.fdroid)
-
-
----
-
-## Contributors
-
-Special thanks to all contributors for their time and effort.
-
-<a href="https://github.com/gokadzev/Musify/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=gokadzev/Musify" alt="Contributors"/>
-</a>
-
+| **Musify** | **Nanoid by Gab** |
+|---|---|
+| Lyrics only online | **Offline Lyrics** — auto-fetched on download, read without internet |
+| Heavy splash | **Minimalist Splash** — black, centered logo, 400ms |
+| Generic design | **Minimalist UI** — black/white, less clutter, faster |
 
 ---
 
-## Contribute
+## 🎵 Features
 
-Contributions are always welcome. Please read our [contributing guidelines](https://github.com/gokadzev/Musify/blob/master/CONTRIBUTING.md) before contributing.
-
----
-
-## F.A.Q
-
-You can see frequently asked questions and their answers [here](https://github.com/gokadzev/Musify/discussions/728).
-
----
-
-## Credits
-
-[Musify](https://github.com/Harsh-23/Musify) - Original inspiration for the concept and name. It is now completely reimplemented with new design and branding.
-
+- **Stream + Download** — with offline lyrics (new!)
+- **Offline Lyrics** — when you download a song, lyrics are fetched via `LyricsManager` and cached in Hive (`offline_lyrics` box) → read offline in `Now Playing`
+- **Minimalist Splash** — pure black `launch_background`, centered `ic_launcher`
+- **Better Features:**
+  - **Smart Cache** — lyrics cached per `artist::title` key
+  - **Live Progress** — download progress with lyrics fetch indicator
+  - **Clean Player** — no ads, no bloat
 
 ---
 
-## License
+## 📊 GitHub Widgets
 
-```
-Copyright © 2026 Valeri Gokadze
+<p align="center">
+  <a href="https://github.com/gabcodingapp-dev/Nanoid"><img src="https://github-readme-stats.vercel.app/api/pin/?username=gabcodingapp-dev&repo=Nanoid&theme=dark&hide_border=true" width="400"></a>
+  <img src="https://img.shields.io/github/last-commit/gabcodingapp-dev/Nanoid?color=111&style=flat-square&label=Last%20Commit">
+  <img src="https://img.shields.io/github/issues/gabcodingapp-dev/Nanoid?color=FF4081&style=flat-square">
+</p>
 
-Musify is free software licensed under GPL v3.0. You may use, modify, and distribute
-this software freely, but must keep the source code open and publicly available, retain
-all copyright notices, disclose all changes made, and use the same GPL v3.0 license.
+---
 
-Prohibited: Closed-source distributions or commercial redistribution of modified versions.
+## ⬇️ Download
+
+- **Release APK:** [Latest Release](https://github.com/gabcodingapp-dev/Nanoid/releases/latest)
+- **CI Build:** `Actions` → `Artifacts` → `Nanoid-debug`
+
+---
+
+## 🛠️ Build
+
+```bash
+git clone https://github.com/gabcodingapp-dev/Nanoid.git
+cd Nanoid
+flutter pub get
+flutter build apk --release
 ```
 
-See the [GNU General Public License](https://github.com/gokadzev/Musify/blob/master/LICENSE) for full details.
+---
+
+## 👤 Credits
+
+| Role | Name |
+|---|---|
+| **Developer** | **Gab** (`gabcodingapp-dev`) |
+| **Package** | `com.gab.nanoid` |
+| **Original** | `gokadzev/Musify` (GPL-3.0) — reimagined as Nanoid |
 
 ---
 
-## Disclaimer
+## 📄 License
 
-```
-Musify and its contributors do not host, own, or distribute any copyrighted audio content.
-The app provides access to content through plugins and external sources. All trademarks, songs, audio files, and related content remain the property of their respective owners and are protected by applicable copyright laws.
-Included plugins are provided for interoperability and educational purposes only. Users are solely responsible for ensuring that their use of the app complies with local laws, copyright regulations, and the terms of service of the respective content providers.
-The developers of Musify do not encourage or endorse copyright infringement and assume no liability for misuse of the software or third-party plugins.
-```
+GPL-3.0 © Gab — keep source open.
+
 ---
+
+<div align="center">
+
+**Made with 🖤 by Gab**
+
+</div>
