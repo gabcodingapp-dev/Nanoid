@@ -167,8 +167,16 @@ class _SyncedLyricsState extends State<_SyncedLyrics> {
             final isActive = i == index;
             final line = widget.lines[i].text;
 
-            return Center(
-              child: AnimatedDefaultTextStyle(
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              // Tap a line to jump to it. The single most useful thing you can
+              // do with timed lyrics, and it is free: the timings are parsed
+              // already.
+              onTap: lyricsTapToSeekEnabled.value
+                  ? () => audioHandler.seek(widget.lines[i].time)
+                  : null,
+              child: Center(
+                child: AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOut,
                 style: TextStyle(
@@ -185,6 +193,7 @@ class _SyncedLyricsState extends State<_SyncedLyrics> {
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                ),
                 ),
               ),
             );

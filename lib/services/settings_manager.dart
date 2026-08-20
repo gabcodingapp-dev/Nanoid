@@ -82,6 +82,34 @@ final restoreQueueEnabled = ValueNotifier<bool>(
   Hive.box('settings').get('restoreQueueEnabled', defaultValue: true),
 );
 
+/// Pitch multiplier, independent of tempo. Android only.
+final playbackPitch = ValueNotifier<double>(
+  (Hive.box('settings').get('playbackPitch', defaultValue: 1.0) as num)
+      .toDouble(),
+);
+
+/// Volume fade applied on play, pause and manual track changes, in ms.
+/// 0 disables it.
+final fadeTransitionMs = ValueNotifier<int>(
+  Hive.box('settings').get('fadeTransitionMs', defaultValue: 0),
+);
+
+/// Ramp the volume down over the last few seconds before the sleep timer
+/// stops playback, instead of cutting out abruptly.
+final sleepTimerFadeEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('sleepTimerFadeEnabled', defaultValue: true),
+);
+
+/// Shuffle weighted by play count and recency instead of uniformly random.
+final smartShuffleEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('smartShuffleEnabled', defaultValue: false),
+);
+
+/// Tapping a synced lyric line seeks playback to that line.
+final lyricsTapToSeekEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('lyricsTapToSeekEnabled', defaultValue: true),
+);
+
 /// Fluid: an exclusive monochrome theme with a slow-moving liquid backdrop.
 /// Overrides the accent colour entirely while active.
 final fluidThemeEnabled = ValueNotifier<bool>(

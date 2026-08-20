@@ -139,6 +139,67 @@ class SettingsPage extends StatelessWidget {
           ),
         ),
         ValueListenableBuilder<bool>(
+          valueListenable: smartShuffleEnabled,
+          builder: (_, value, __) => CustomBar(
+            'Smart shuffle',
+            FluentIcons.arrow_sync_24_regular,
+            description:
+                'Weights shuffle by play count and recency instead of pure '
+                'random, so it stops replaying the same few tracks.',
+            trailing: Switch(
+              value: value,
+              onChanged: (v) {
+                addOrUpdateData<bool>('settings', 'smartShuffleEnabled', v);
+                smartShuffleEnabled.value = v;
+                showToast(context, context.l10n!.settingChangedMsg);
+              },
+            ),
+          ),
+        ),
+        ValueListenableBuilder<int>(
+          valueListenable: fadeTransitionMs,
+          builder: (_, value, __) => CustomBar(
+            'Fade transitions',
+            FluentIcons.arrow_repeat_1_24_regular,
+            description: value == 0
+                ? 'Off - playback starts and stops instantly.'
+                : '${value}ms fade on play and pause.',
+            onTap: () => _showFadePicker(context),
+          ),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: sleepTimerFadeEnabled,
+          builder: (_, value, __) => CustomBar(
+            'Sleep timer fade-out',
+            FluentIcons.timer_24_regular,
+            description: 'Ramp the volume down over the last 8 seconds.',
+            trailing: Switch(
+              value: value,
+              onChanged: (v) {
+                addOrUpdateData<bool>('settings', 'sleepTimerFadeEnabled', v);
+                sleepTimerFadeEnabled.value = v;
+                showToast(context, context.l10n!.settingChangedMsg);
+              },
+            ),
+          ),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: lyricsTapToSeekEnabled,
+          builder: (_, value, __) => CustomBar(
+            'Tap lyrics to seek',
+            FluentIcons.text_bullet_list_square_24_regular,
+            description: 'Tap any synced lyric line to jump to it.',
+            trailing: Switch(
+              value: value,
+              onChanged: (v) {
+                addOrUpdateData<bool>('settings', 'lyricsTapToSeekEnabled', v);
+                lyricsTapToSeekEnabled.value = v;
+                showToast(context, context.l10n!.settingChangedMsg);
+              },
+            ),
+          ),
+        ),
+        ValueListenableBuilder<bool>(
           valueListenable: skipSilenceEnabled,
           builder: (_, value, __) => CustomBar(
             'Skip silence',
@@ -796,6 +857,32 @@ class SettingsPage extends StatelessWidget {
       useSystemColor: value,
     );
     showToast(context, context.l10n!.settingChangedMsg);
+  }
+
+  void _showFadePicker(BuildContext context) {
+    const options = [0, 200, 400, 800, 1500, 3000];
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (final ms in options)
+              ListTile(
+                title: Text(ms == 0 ? 'Off' : '${ms}ms'),
+                trailing: fadeTransitionMs.value == ms
+                    ? const Icon(FluentIcons.checkmark_24_filled)
+                    : null,
+                onTap: () {
+                  addOrUpdateData<int>('settings', 'fadeTransitionMs', ms);
+                  fadeTransitionMs.value = ms;
+                  Navigator.pop(sheetContext);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _toggleFluidTheme(BuildContext context, bool value) {

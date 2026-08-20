@@ -21,6 +21,7 @@
  */
 
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
@@ -368,6 +369,7 @@ class NanoidAudioHandler extends BaseAudioHandler {
 
       // Restore user playback preferences.
       await audioPlayer.setSpeed(playbackSpeed.value);
+      await setPlaybackPitch(playbackPitch.value);
       await setSkipSilence(skipSilenceEnabled.value);
 
       // Initialize equalizer once at startup
@@ -1408,6 +1410,120 @@ class NanoidAudioHandler extends BaseAudioHandler {
   /// export it (e.g. "save queue as playlist").
   List<Map> get queueSongs => List<Map>.unmodifiable(_queueList);
 
+  // --- A-B loop ----------------------------------------------------------
+
+  /// Start of the repeat section. Null when no loop is armed.
+  final abLoopStart = ValueNotifier<Duration?>(null);
+
+  /// End of the repeat section. Null while only A has been set.
+  final abLoopEnd = ValueNotifier<Duration?>(null);
+
+  StreamSubscription<Duration>? _abLoopSub;
+
+  /// Cycles the A-B loop: first press sets A, second sets B and starts
+  /// looping, third clears it.
+  void cycleAbLoop() {
+    final position = audioPlayer.position;
+    if (abLoopStart.value == null) {
+      abLoopStart.value = position;
+      return;
+    }
+    if (abLoopEnd.value == null) {
+      // Guard against B <= A, which would loop infinitely on one frame.
+      if (position <= abLoopStart.value! + const Duration(milliseconds: 500)) {
+        abLoopStart.value = position;
+        return;
+      }
+      abLoopEnd.value = position;
+      _startAbLoopWatch();
+      return;
+    }
+    clearAbLoop();
+  }
+
+  void clearAbLoop() {
+    abLoopStart.value = null;
+    abLoopEnd.value = null;
+    _abLoopSub?.cancel();
+    _abLoopSub = null;
+  }
+
+  void _startAbLoopWatch() {
+    _abLoopSub?.cancel();
+    _abLoopSub = audioPlayer.positionStream.listen((position) {
+      final start = abLoopStart.value;
+      final end = abLoopEnd.value;
+      if (start == null || end == null) return;
+      if (position >= end) unawaited(audioPlayer.seek(start));
+    });
+  }
+
+  // --- fades ---------------------------------------------------------------
+
+  /// Target volume the user's fades return to. Kept separate from
+  /// audioPlayer.volume because a fade transiently drives that to 0.
+  double _baseVolume = 1;
+
+  Future<void> _fadeVolume(double from, double to, Duration duration) async {
+    if (duration <= Duration.zero) {
+      await audioPlayer.setVolume(to);
+      return;
+    }
+    const stepMs = 25;
+    final steps = (duration.inMilliseconds / stepMs).ceil().clamp(1, 400);
+    for (var i = 1; i <= steps; i++) {
+      final v = from + ((to - from) * (i / steps));
+      await audioPlayer.setVolume(v.clamp(0.0, 1.0));
+      await Future<void>.delayed(const Duration(milliseconds: stepMs));
+    }
+  }
+
+  Duration get _fadeDuration =>
+      Duration(milliseconds: fadeTransitionMs.value.clamp(0, 5000));
+
+  /// Fades out then pauses, so a manual pause doesn't clip the waveform.
+  Future<void> fadeOutAndPause() async {
+    final fade = _fadeDuration;
+    if (fade > Duration.zero && audioPlayer.playing) {
+      await _fadeVolume(_baseVolume, 0, fade);
+    }
+    await audioPlayer.pause();
+    await audioPlayer.setVolume(_baseVolume);
+  }
+
+  /// Starts playback from silence and ramps up.
+  Future<void> fadeInAndPlay() async {
+    final fade = _fadeDuration;
+    if (fade <= Duration.zero) {
+      await audioPlayer.play();
+      return;
+    }
+    await audioPlayer.setVolume(0);
+    unawaited(audioPlayer.play());
+    await _fadeVolume(0, _baseVolume, fade);
+  }
+
+  /// Ramps the volume down over [over] and then pauses. Used by the sleep
+  /// timer so playback ends gently rather than cutting off mid-bar.
+  Future<void> sleepFadeOut(Duration over) async {
+    await _fadeVolume(_baseVolume, 0, over);
+    await audioPlayer.pause();
+    await audioPlayer.setVolume(_baseVolume);
+  }
+
+  /// Sets pitch independently of tempo. Android-only in just_audio, so a
+  /// failure here is downgraded to a log rather than surfaced.
+  Future<void> setPlaybackPitch(double pitch) async {
+    final clamped = pitch.clamp(0.5, 2.0);
+    playbackPitch.value = clamped;
+    unawaited(addOrUpdateData<double>('settings', 'playbackPitch', clamped));
+    try {
+      await audioPlayer.setPitch(clamped);
+    } catch (e, stackTrace) {
+      logger.log('Pitch unsupported', error: e, stackTrace: stackTrace);
+    }
+  }
+
   /// Sets playback speed and remembers it across launches.
   Future<void> setPlaybackSpeed(double speed) async {
     final clamped = speed.clamp(0.25, 3.0);
@@ -1826,7 +1942,7 @@ class NanoidAudioHandler extends BaseAudioHandler {
         wasPlaying: audioPlayer.playing,
       );
       unawaited(listeningStatsService.flush());
-      await audioPlayer.pause();
+      await fadeOutAndPause();
     } catch (e, stackTrace) {
       logger.log('Error in pause()', error: e, stackTrace: stackTrace);
     }
@@ -2542,6 +2658,47 @@ class NanoidAudioHandler extends BaseAudioHandler {
     }
   }
 
+  /// Weighted shuffle.
+  ///
+  /// A uniform shuffle keeps resurfacing the same handful of tracks and often
+  /// replays something heard minutes ago. This weights each track by how
+  /// rarely it has been played and how long ago it was last heard, then draws
+  /// without replacement, so the order still feels random but spreads across
+  /// the library.
+  List<Map> buildSmartShuffleOrder(List<Map> songs) {
+    if (songs.length < 3) return List<Map>.from(songs);
+
+    final recentIds = userRecentlyPlayed.value
+        .take(25)
+        .map((s) => s['ytid']?.toString())
+        .whereType<String>()
+        .toList();
+
+    final random = math.Random();
+    final scored = <(double, Map)>[];
+
+    for (final song in songs) {
+      final id = song['ytid']?.toString();
+      var weight = 1.0;
+
+      // Recently played tracks are pushed down, most-recent hardest.
+      final recentIndex = id == null ? -1 : recentIds.indexOf(id);
+      if (recentIndex >= 0) {
+        weight *= 0.15 + (0.85 * (recentIndex / recentIds.length));
+      }
+
+      // Rarely played tracks are pulled up.
+      final plays = (song['playCount'] as num?)?.toDouble() ?? 0;
+      weight *= 1 / (1 + math.log(1 + plays));
+
+      // Jitter so equal-weight tracks do not lock into a fixed order.
+      scored.add((weight * (0.5 + random.nextDouble()), song));
+    }
+
+    scored.sort((a, b) => b.$1.compareTo(a.$1));
+    return scored.map((e) => e.$2).toList();
+  }
+
   Future<void> playAgain() async {
     try {
       listeningStatsService.finishListeningSession(
@@ -2578,9 +2735,16 @@ class NanoidAudioHandler extends BaseAudioHandler {
     final currentQueueEntryId = _queueEntryIds.ensureId(currentSong);
 
     final queueIdMap = _buildIdMap(_queueList);
-    _queueList
-      ..removeWhere((song) => manualSongIds.contains(queueIdMap[song]))
-      ..shuffle();
+    _queueList.removeWhere((song) => manualSongIds.contains(queueIdMap[song]));
+
+    if (smartShuffleEnabled.value) {
+      final ordered = buildSmartShuffleOrder(_queueList);
+      _queueList
+        ..clear()
+        ..addAll(ordered);
+    } else {
+      _queueList.shuffle();
+    }
 
     final newCurrentIndex = _queueList.indexWhere(
       (song) => _queueEntryIds.ensureId(song) == currentQueueEntryId,
@@ -2687,6 +2851,16 @@ class NanoidAudioHandler extends BaseAudioHandler {
       _sleepTimer?.cancel();
       sleepTimerExpired = false;
       sleepTimerNotifier.value = duration;
+
+      // Start the fade slightly before the deadline so playback reaches
+      // silence exactly when the timer expires, rather than after it.
+      const fadeWindow = Duration(seconds: 8);
+      if (sleepTimerFadeEnabled.value && duration > fadeWindow) {
+        Timer(duration - fadeWindow, () {
+          if (sleepTimerNotifier.value == null) return;
+          unawaited(sleepFadeOut(fadeWindow));
+        });
+      }
 
       _sleepTimer = Timer(duration, () async {
         sleepTimerExpired = true;

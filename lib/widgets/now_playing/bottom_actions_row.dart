@@ -153,6 +153,7 @@ class _BottomActionsRowState extends State<BottomActionsRow> {
               tooltip: l10n.makeOffline,
             ),
           _buildSpeedButton(context, colorScheme, responsiveIconSize),
+          _buildAbLoopButton(context, colorScheme, responsiveIconSize),
           _buildSleepTimerButton(context, colorScheme, responsiveIconSize),
           if (!offlineMode.value && !isRadioStation)
             _buildSimpleActionButton(
@@ -237,6 +238,64 @@ class _BottomActionsRowState extends State<BottomActionsRow> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: actions,
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAbLoopButton(
+    BuildContext context,
+    ColorScheme colorScheme,
+    double size,
+  ) {
+    return ValueListenableBuilder<Duration?>(
+      valueListenable: audioHandler.abLoopStart,
+      builder: (context, start, _) {
+        return ValueListenableBuilder<Duration?>(
+          valueListenable: audioHandler.abLoopEnd,
+          builder: (context, end, __) {
+            final armed = start != null;
+            final looping = start != null && end != null;
+
+            return IconButton(
+              tooltip: looping
+                  ? 'A-B loop on (tap to clear)'
+                  : armed
+                  ? 'Tap to set B'
+                  : 'A-B loop: tap to set A',
+              iconSize: size,
+              icon: Icon(
+                looping
+                    ? FluentIcons.arrow_repeat_all_24_filled
+                    : FluentIcons.arrow_repeat_1_24_regular,
+                color: armed
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
+              style: IconButton.styleFrom(
+                backgroundColor: armed
+                    ? colorScheme.primary.withValues(alpha: 0.15)
+                    : Colors.transparent,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                audioHandler.cycleAbLoop();
+                final s2 = audioHandler.abLoopStart.value;
+                final e2 = audioHandler.abLoopEnd.value;
+                showToast(
+                  context,
+                  e2 != null
+                      ? 'A-B loop set'
+                      : s2 != null
+                      ? 'A set - tap again for B'
+                      : 'A-B loop cleared',
+                );
+              },
+            );
+          },
         );
       },
     );
