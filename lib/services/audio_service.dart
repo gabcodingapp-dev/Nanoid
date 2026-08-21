@@ -43,8 +43,11 @@ import 'package:rxdart/rxdart.dart';
 class NanoidAudioHandler extends BaseAudioHandler {
   NanoidAudioHandler() {
     _androidEqualizer = AndroidEqualizer();
+    _loudnessEnhancer = AndroidLoudnessEnhancer();
     audioPlayer = AudioPlayer(
-      audioPipeline: AudioPipeline(androidAudioEffects: [_androidEqualizer]),
+      audioPipeline: AudioPipeline(
+        androidAudioEffects: [_loudnessEnhancer, _androidEqualizer],
+      ),
       audioLoadConfiguration: const AudioLoadConfiguration(
         androidLoadControl: AndroidLoadControl(
           maxBufferDuration: Duration(seconds: 60),
@@ -68,6 +71,7 @@ class NanoidAudioHandler extends BaseAudioHandler {
   }
 
   late final AndroidEqualizer _androidEqualizer;
+  late final AndroidLoudnessEnhancer _loudnessEnhancer;
   late final AudioPlayer audioPlayer;
   bool _equalizerInitialized = false;
   Future<bool>? _equalizerInitFuture;
@@ -372,6 +376,7 @@ class NanoidAudioHandler extends BaseAudioHandler {
       await audioPlayer.setSpeed(playbackSpeed.value);
       await setPlaybackPitch(playbackPitch.value);
       await setSkipSilence(skipSilenceEnabled.value);
+      await setVolumeBoost(volumeBoostDb.value);
 
       // Initialize equalizer once at startup
       unawaited(_ensureEqualizerConfigured());
@@ -1510,6 +1515,39 @@ class NanoidAudioHandler extends BaseAudioHandler {
     await _fadeVolume(_baseVolume, 0, over);
     await audioPlayer.pause();
     await audioPlayer.setVolume(_baseVolume);
+  }
+
+  // --- volume boost --------------------------------------------------------
+
+  /// Hard ceiling on extra gain, in dB.
+  ///
+  /// Android's LoudnessEnhancer will happily accept far more, but this is a
+  /// digital gain stage after the mixer: past roughly this point the signal
+  /// clips, which sounds like crackling rather than "louder", and sustained
+  /// output at that level can physically damage a phone speaker. Capping is a
+  /// deliberate choice, not a limitation.
+  static const double maxVolumeBoostDb = 12;
+
+  /// Applies extra output gain above the system volume ceiling.
+  ///
+  /// Passing 0 disables the effect outright rather than leaving it running at
+  /// unity, so there is no processing in the path when the user is not using
+  /// the feature.
+  Future<void> setVolumeBoost(double decibels) async {
+    final clamped = decibels.clamp(0.0, maxVolumeBoostDb);
+    volumeBoostDb.value = clamped;
+    unawaited(addOrUpdateData<double>('settings', 'volumeBoostDb', clamped));
+    try {
+      await _loudnessEnhancer.setTargetGain(clamped);
+      await _loudnessEnhancer.setEnabled(clamped > 0);
+    } catch (e, stackTrace) {
+      // Some devices/ROMs refuse to attach the effect to the session.
+      logger.log(
+        'Volume boost unavailable',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   /// Sets pitch independently of tempo. Android-only in just_audio, so a

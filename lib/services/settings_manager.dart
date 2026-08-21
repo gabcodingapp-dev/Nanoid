@@ -110,6 +110,18 @@ final lyricsTapToSeekEnabled = ValueNotifier<bool>(
   Hive.box('settings').get('lyricsTapToSeekEnabled', defaultValue: true),
 );
 
+/// Extra output gain in decibels, on top of the system volume ceiling.
+/// 0 disables the effect entirely.
+final volumeBoostDb = ValueNotifier<double>(
+  (Hive.box('settings').get('volumeBoostDb', defaultValue: 0.0) as num)
+      .toDouble(),
+);
+
+/// ListenBrainz user token. Empty means scrobbling is off.
+final listenBrainzToken = ValueNotifier<String>(
+  Hive.box('settings').get('listenBrainzToken', defaultValue: ''),
+);
+
 /// Fluid: an exclusive monochrome theme with a slow-moving liquid backdrop.
 /// Overrides the accent colour entirely while active.
 final fluidThemeEnabled = ValueNotifier<bool>(

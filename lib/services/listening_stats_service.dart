@@ -26,6 +26,7 @@ import 'package:hive/hive.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:nanoid/main.dart' show logger;
 import 'package:nanoid/services/data_manager.dart';
+import 'package:nanoid/services/listenbrainz_service.dart';
 import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/utilities/listening_stats_utils.dart';
 import 'package:nanoid/utilities/map_utils.dart';
@@ -285,6 +286,16 @@ class ListeningStatsService {
       recordListeningSessionProgress(
         wasPlaying: wasPlaying,
       );
+    }
+
+    // Scrobble here rather than on track change: this is the one place that
+    // knows how long the track was actually listened to, which is what
+    // ListenBrainz gates submission on.
+    final listenBrainz = ListenBrainzService();
+    if (listenBrainz.isEnabled &&
+        _sessionSong != null &&
+        listenBrainz.shouldSubmit(_sessionListened, _sessionDuration)) {
+      unawaited(listenBrainz.submitListen(_sessionSong!));
     }
 
     _sessionSong = null;

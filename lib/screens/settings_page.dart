@@ -34,6 +34,7 @@ import 'package:nanoid/services/listening_stats_service.dart';
 import 'package:nanoid/services/playlist_download_service.dart';
 import 'package:nanoid/services/playlists_manager.dart';
 import 'package:nanoid/services/router_service.dart';
+import 'package:nanoid/services/listenbrainz_service.dart';
 import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/services/update_manager.dart';
 import 'package:nanoid/theme/app_colors.dart';
@@ -136,6 +137,17 @@ class SettingsPage extends StatelessWidget {
           trailing: Switch(
             value: useSystemColor.value,
             onChanged: (value) => _toggleSystemColor(context, value),
+          ),
+        ),
+        ValueListenableBuilder<String>(
+          valueListenable: listenBrainzToken,
+          builder: (_, token, __) => CustomBar(
+            'ListenBrainz scrobbling',
+            FluentIcons.globe_24_regular,
+            description: token.isEmpty
+                ? 'Not connected. Tap to add your user token.'
+                : 'Connected. Listens are submitted automatically.',
+            onTap: () => _showListenBrainzDialog(context),
           ),
         ),
         ValueListenableBuilder<bool>(
@@ -857,6 +869,69 @@ class SettingsPage extends StatelessWidget {
       useSystemColor: value,
     );
     showToast(context, context.l10n!.settingChangedMsg);
+  }
+
+  Future<void> _showListenBrainzDialog(BuildContext context) async {
+    final controller = TextEditingController(text: listenBrainzToken.value);
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ListenBrainz'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Paste your user token from listenbrainz.org/settings. '
+              'Listens are submitted once you have heard half a track, '
+              'or four minutes.',
+              style: TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'User token'),
+            ),
+          ],
+        ),
+        actions: [
+          if (listenBrainzToken.value.isNotEmpty)
+            TextButton(
+              onPressed: () {
+                addOrUpdateData<String>('settings', 'listenBrainzToken', '');
+                listenBrainzToken.value = '';
+                Navigator.pop(dialogContext);
+                showToast(context, 'Disconnected');
+              },
+              child: const Text('Disconnect'),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.l10n!.cancel),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final token = controller.text.trim();
+              Navigator.pop(dialogContext);
+              if (token.isEmpty) return;
+              // Validate before saving, so a typo surfaces now rather than as
+              // silently missing scrobbles days later.
+              final user = await ListenBrainzService().validateToken(token);
+              if (user == null) {
+                if (context.mounted) showToast(context, 'Invalid token');
+                return;
+              }
+              addOrUpdateData<String>('settings', 'listenBrainzToken', token);
+              listenBrainzToken.value = token;
+              if (context.mounted) showToast(context, 'Connected as $user');
+            },
+            child: Text(context.l10n!.add),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showFadePicker(BuildContext context) {

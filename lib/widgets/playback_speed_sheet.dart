@@ -174,6 +174,71 @@ class PlaybackSpeedSheet extends StatelessWidget {
                   ),
                 ),
               ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 2),
+                child: Row(
+                  children: [
+                    Icon(
+                      FluentIcons.speaker_2_24_regular,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Volume boost',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const Spacer(),
+                    ValueListenableBuilder<double>(
+                      valueListenable: volumeBoostDb,
+                      builder: (context, db, _) => Text(
+                        db == 0 ? 'Off' : '+${db.toStringAsFixed(0)} dB',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: db == 0
+                              ? colorScheme.onSurfaceVariant
+                              : colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ValueListenableBuilder<double>(
+                valueListenable: volumeBoostDb,
+                builder: (context, db, _) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+                      child: Text(
+                        db >= 9
+                            ? 'High boost can distort and may damage your '
+                                  'speaker or hearing. Use briefly.'
+                            : 'Pushes output above the system maximum.',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: db >= 9
+                              ? colorScheme.error
+                              : colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    Slider(
+                      value: db,
+                      max: 12,
+                      divisions: 12,
+                      label: db == 0 ? 'Off' : '+${db.toStringAsFixed(0)} dB',
+                      onChanged: (v) => audioHandler.setVolumeBoost(v),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
             ],
           );
         },
