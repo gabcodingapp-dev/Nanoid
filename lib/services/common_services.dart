@@ -136,15 +136,47 @@ Future<bool> _validateCachedUrl(String cachedUrl) async {
   }
 }
 
-Future<List> fetchSongsList(String searchQuery) async {
+Future<List> fetchSongsList(
+  String searchQuery, {
+  int? limit,
+  bool refresh = false,
+}) async {
+  final normalizedQuery = searchQuery.trim();
+  if (normalizedQuery.isEmpty) return [];
+
+  // Search-backed discovery is intentionally cache-first. Endless Home loads
+  // only two shelves at a time, and reopening the app should not repeat those
+  // requests when the result is still fresh.
+  final encodedQuery = base64Url.encode(
+    utf8.encode(normalizedQuery.toLowerCase()),
+  );
+  final cacheKey = 'search_songs_$encodedQuery';
+  if (!refresh) {
+    final cached = await getData(
+      'cache',
+      cacheKey,
+      cachingDuration: searchCacheDuration,
+    );
+    if (cached is List && cached.isNotEmpty) {
+      final songs = List<dynamic>.from(cached);
+      return limit == null ? songs : songs.take(limit).toList();
+    }
+  }
+
   try {
-    // If not in cache, perform the search
-    final List<Video> searchResults = await ytClient.search.search(searchQuery);
+    final List<Video> searchResults = await ytClient.search.search(
+      normalizedQuery,
+    );
     final songsList = searchResults
-        .map((video) => returnSongLayout(0, video))
+        .asMap()
+        .entries
+        .map((entry) => returnSongLayout(entry.key, entry.value))
         .toList();
 
-    return songsList;
+    if (songsList.isNotEmpty) {
+      unawaited(addOrUpdateData<List>('cache', cacheKey, songsList));
+    }
+    return limit == null ? songsList : songsList.take(limit).toList();
   } catch (e, stackTrace) {
     logger.log('Error in fetchSongsList', error: e, stackTrace: stackTrace);
     return [];

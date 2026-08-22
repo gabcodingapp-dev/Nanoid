@@ -49,15 +49,20 @@
   - **Smart Cache** — lyrics cached per `artist::title` key
   - **Live Progress** — download progress with lyrics fetch indicator
   - **Clean Player** — no ads, no bloat
+- **Nanoid 1.2 Endless Home:**
+  - **Spotify-inspired interface** — greeting, quick access, artwork-first shelves and Explore cards
+  - **Never-ending discovery** — new music, podcast and live shelves load as you scroll
+  - **Home filters** — switch between All, Music, Podcasts and Live
+  - **Philippines + OPM discovery** — local charts and rotating Filipino music lanes
+  - **Pull to refresh** — rebuild recommendations, playlists and discovery in one gesture
 - **Nanoid 1.1 feature pack:**
-  - **Moods, Genres, Charts & Podcasts discovery** — shortcuts backed by YouTube search
   - **Community Ratings** — read-only estimates from Return YouTube Dislike
   - **Multi-source Lyrics** — LRCLIB and legacy sources, then a labelled YouTube transcript fallback
   - **Granular SponsorBlock** — choose sponsors, intros, outros, self-promotion, filler and more
   - **Liquid Glass v2** — directional rim lighting and touch-responsive specular glow
 
 See the honest [SimpMusic feature-parity plan](SIMPMUSIC_FEATURE_PARITY.md) for
-what is already present, what landed in 1.1, and the remaining platform work.
+what is already present, what landed, and the remaining platform work.
 
 ---
 

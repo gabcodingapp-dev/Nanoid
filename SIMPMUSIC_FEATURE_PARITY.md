@@ -41,13 +41,24 @@ Nanoid remains a Flutter app with package ID `com.gab.nanoid`; SimpMusic is a Co
 - [x] Spotify playlist CSV import
 - [x] ListenBrainz scrobbling
 
+## Nanoid 1.2 — implemented and built
+
+- [x] Spotify-inspired, artwork-first Home layout
+- [x] Quick-access grid for liked songs, downloads, recent tracks and playlists
+- [x] All, Music, Podcasts and Live Home filters
+- [x] Endless discovery shelves loaded near the bottom of the page
+- [x] Pull-to-refresh and retry states
+- [x] Rotating Philippines, OPM, genre, mood, podcast and live-performance lanes
+- [x] Search-backed discovery caching and duplicate control
+- [x] One-tap shelf playback and full-search actions
+
 ## Follow-up milestones
 
-These are not falsely labelled as complete in 1.1 because each needs a real platform integration, account flow, or player-engine change.
+These are not falsely labelled as complete because each needs a real platform integration, account flow, or player-engine change.
 
-### 1.2 — catalog and identity
+### Catalog and identity
 
-- [ ] Native YouTube Music Home/Charts/Moods browse shelves (not search shortcuts)
+- [ ] Native YouTube Music Home/Charts/Moods browse shelves (not search-backed shelves)
 - [ ] YouTube Music login, library sync and multiple accounts
 - [ ] Full podcast subscriptions, episode progress and offline episode library
 - [ ] Followed-artist release notifications

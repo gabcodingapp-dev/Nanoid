@@ -6,39 +6,27 @@
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
- *     Nanoid is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- *
- *     For more information about Nanoid, including how to contribute,
- *     please visit: https://github.com/gabcodingapp-dev/Nanoid
  */
+
+import 'dart:async';
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:nanoid/constants/app_constants.dart';
 import 'package:nanoid/extensions/l10n.dart';
 import 'package:nanoid/main.dart';
 import 'package:nanoid/services/common_services.dart';
+import 'package:nanoid/services/discovery_feed_service.dart';
 import 'package:nanoid/services/listening_stats_service.dart';
 import 'package:nanoid/services/playlists_manager.dart';
 import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/utilities/app_utils.dart';
-import 'package:nanoid/utilities/async_loader.dart';
 import 'package:nanoid/utilities/listening_stats_utils.dart';
 import 'package:nanoid/widgets/announcement_box.dart';
 import 'package:nanoid/widgets/listening_recap_card.dart';
 import 'package:nanoid/widgets/mini_player_bottom_space.dart';
-import 'package:nanoid/widgets/playlist_cube.dart';
+import 'package:nanoid/widgets/playlist_artwork.dart';
 import 'package:nanoid/widgets/section_header.dart';
-import 'package:nanoid/widgets/song_bar.dart';
 import 'package:nanoid/widgets/song_card.dart';
 import 'package:nanoid/widgets/spinner.dart';
 
@@ -46,366 +34,533 @@ class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  late final Future<List> _suggestedPlaylistsFuture;
+  static const int _shelfLimit = 12;
+  static const double _loadMoreThreshold = 900;
+
+  final ScrollController _scrollController = ScrollController();
+  final DiscoveryFeedService _discovery = DiscoveryFeedService();
+
+  late Future<List> _suggestedPlaylistsFuture;
   late Future<List> _recommendedSongsFuture;
+
+  DiscoveryFilter _filter = DiscoveryFilter.all;
+  final List<DiscoveryShelf> _feedShelves = [];
+  int _nextFeedPage = 0;
+  bool _loadingFeed = false;
+  bool _feedError = false;
 
   @override
   void initState() {
     super.initState();
-    _suggestedPlaylistsFuture = getPlaylists(
-      playlistsNum: recommendedCubesNumber,
-    );
-    _recommendedSongsFuture = getRecommendedSongs();
+    _resetCoreFutures();
+    _scrollController.addListener(_onScroll);
     externalRecommendations.addListener(_refreshRecommendedSongs);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadMoreFeed());
   }
 
   @override
   void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     externalRecommendations.removeListener(_refreshRecommendedSongs);
     super.dispose();
   }
 
+  void _resetCoreFutures() {
+    _suggestedPlaylistsFuture = getPlaylists(playlistsNum: 10);
+    _recommendedSongsFuture = getRecommendedSongs();
+  }
+
   void _refreshRecommendedSongs() {
     if (!mounted) return;
+    setState(() => _recommendedSongsFuture = getRecommendedSongs());
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.extentAfter < _loadMoreThreshold) {
+      unawaited(_loadMoreFeed());
+    }
+  }
+
+  Future<void> _selectFilter(DiscoveryFilter filter) async {
+    if (_filter == filter) return;
     setState(() {
-      _recommendedSongsFuture = getRecommendedSongs();
+      _filter = filter;
+      _feedShelves.clear();
+      _nextFeedPage = 0;
+      _feedError = false;
     });
+    await _loadMoreFeed();
+  }
+
+  Future<void> _loadMoreFeed({bool refresh = false}) async {
+    if (_loadingFeed || !mounted) return;
+    setState(() {
+      _loadingFeed = true;
+      _feedError = false;
+      if (refresh) {
+        _feedShelves.clear();
+        _nextFeedPage = 0;
+      }
+    });
+
+    final page = _nextFeedPage;
+    try {
+      final shelves = await _discovery.loadPage(
+        page: page,
+        filter: _filter,
+        refresh: refresh,
+      );
+      if (!mounted) return;
+      setState(() {
+        final existing = _feedShelves.map((shelf) => shelf.id).toSet();
+        _feedShelves.addAll(shelves.where((shelf) => existing.add(shelf.id)));
+        // Advance even when a provider returns nothing. The next page uses a
+        // different query and can recover instead of retrying one dead lane.
+        _nextFeedPage = page + 1;
+        _feedError = shelves.isEmpty;
+      });
+    } catch (error, stackTrace) {
+      logger.log(
+        'Failed to extend Home discovery feed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (mounted) setState(() => _feedError = true);
+    } finally {
+      if (mounted) {
+        setState(() => _loadingFeed = false);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _feedError || !_scrollController.hasClients) return;
+          if (_scrollController.position.extentAfter < _loadMoreThreshold) {
+            unawaited(_loadMoreFeed());
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshEverything() async {
+    setState(_resetCoreFutures);
+    await _loadMoreFeed(refresh: true);
   }
 
   @override
   Widget build(BuildContext context) {
-    final playlistHeight = MediaQuery.sizeOf(context).height * 0.25 / 1.1;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Nanoid.')),
-      body: SingleChildScrollView(
-        padding: commonSingleChildScrollViewPadding,
-        child: Column(
-          children: [
-            ValueListenableBuilder<String?>(
-              valueListenable: announcementURL,
-              builder: (_, _url, __) {
-                if (_url == null) return const SizedBox.shrink();
-                final isSponsorshipAnnouncement = isSponsorshipAnnouncementUrl(
-                  _url,
-                );
-                final _message = isSponsorshipAnnouncement
-                    ? context.l10n!.sponsorProject
-                    : context.l10n!.newAnnouncement;
-                final _icon = isSponsorshipAnnouncement
-                    ? FluentIcons.heart_24_filled
-                    : FluentIcons.megaphone_24_filled;
+    final colorScheme = Theme.of(context).colorScheme;
+    final showMusicHome =
+        _filter == DiscoveryFilter.all || _filter == DiscoveryFilter.music;
 
-                return AnnouncementBox(
-                  message: _message,
-                  url: _url,
-                  icon: _icon,
-                  onDismiss: () async {
-                    announcementURL.value = null;
-                  },
-                );
-              },
+    return Scaffold(
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: const Alignment(0.25, 0.42),
+            colors: [
+              colorScheme.primary.withValues(alpha: 0.24),
+              colorScheme.surface.withValues(alpha: 0.98),
+              colorScheme.surface,
+            ],
+            stops: const [0, 0.30, 1],
+          ),
+        ),
+        child: RefreshIndicator(
+          onRefresh: _refreshEverything,
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
             ),
-            _buildDiscoveryShortcuts(),
-            _buildQuickPicksSection(),
-            _buildRecentlyPlayedSection(),
-            _buildSuggestedPlaylists(playlistHeight),
-            _buildSuggestedPlaylists(playlistHeight, showOnlyLiked: true),
-            _buildCurrentMonthRecapSection(),
-            _buildRecommendedSongsSection(),
-            const MiniPlayerBottomSpace(),
-          ],
+            slivers: [
+              _buildAppBar(context),
+              _sliverBox(_buildAnnouncement()),
+              _sliverBox(_buildFilterBar()),
+              if (showMusicHome) _sliverBox(_buildQuickAccess()),
+              _sliverBox(_buildExploreCarousel()),
+              if (showMusicHome) _sliverBox(_buildQuickPicksSection()),
+              if (showMusicHome) _sliverBox(_buildRecentlyPlayedSection()),
+              if (showMusicHome) _sliverBox(_buildSuggestedPlaylists()),
+              if (_filter == DiscoveryFilter.all)
+                _sliverBox(_buildCurrentMonthRecapSection()),
+              ..._feedShelves.map(
+                (shelf) => _sliverBox(_buildDiscoveryShelf(shelf)),
+              ),
+              _sliverBox(_buildFeedFooter()),
+              const SliverToBoxAdapter(child: MiniPlayerBottomSpace()),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDiscoveryShortcuts() {
-    const shortcuts = <({String label, String query, IconData icon})>[
-      (
-        label: 'Moods & genres',
-        query: 'mood music mix',
-        icon: FluentIcons.color_24_regular,
+  SliverAppBar _buildAppBar(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SliverAppBar(
+      pinned: true,
+      floating: true,
+      snap: true,
+      backgroundColor: colorScheme.surface.withValues(alpha: 0.94),
+      surfaceTintColor: Colors.transparent,
+      titleSpacing: 16,
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _greeting(),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          Text(
+            'Nanoid · your music, always moving',
+            style: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
-      (
-        label: 'Charts',
-        query: 'global top songs chart',
-        icon: FluentIcons.arrow_trending_24_regular,
+      actions: [
+        IconButton(
+          tooltip: context.l10n!.search,
+          onPressed: () => context.go('/search'),
+          icon: const Icon(FluentIcons.search_24_regular),
+        ),
+        IconButton(
+          tooltip: context.l10n!.settings,
+          onPressed: () => context.go('/settings'),
+          icon: const Icon(FluentIcons.settings_24_regular),
+        ),
+        const SizedBox(width: 4),
+      ],
+    );
+  }
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 5) return 'Still listening?';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  SliverToBoxAdapter _sliverBox(Widget child) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: child,
       ),
-      (
-        label: 'OPM',
-        query: 'OPM Filipino music',
-        icon: FluentIcons.music_note_2_24_regular,
-      ),
-      (
-        label: 'Podcasts',
-        query: 'music podcast episodes',
-        icon: FluentIcons.mic_record_24_regular,
-      ),
-      (
-        label: 'New releases',
-        query: 'new music releases',
-        icon: FluentIcons.sparkle_24_regular,
-      ),
+    );
+  }
+
+  Widget _buildAnnouncement() {
+    return ValueListenableBuilder<String?>(
+      valueListenable: announcementURL,
+      builder: (_, url, __) {
+        if (url == null) return const SizedBox.shrink();
+        final sponsorship = isSponsorshipAnnouncementUrl(url);
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: AnnouncementBox(
+            message: sponsorship
+                ? context.l10n!.sponsorProject
+                : context.l10n!.newAnnouncement,
+            url: url,
+            icon: sponsorship
+                ? FluentIcons.heart_24_filled
+                : FluentIcons.megaphone_24_filled,
+            onDismiss: () async => announcementURL.value = null,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterBar() {
+    const filters = <(DiscoveryFilter, String)>[
+      (DiscoveryFilter.all, 'All'),
+      (DiscoveryFilter.music, 'Music'),
+      (DiscoveryFilter.podcasts, 'Podcasts'),
+      (DiscoveryFilter.live, 'Live'),
     ];
+
+    return SizedBox(
+      height: 58,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        itemCount: filters.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final item = filters[index];
+          return ChoiceChip(
+            label: Text(item.$2),
+            selected: _filter == item.$1,
+            showCheckmark: false,
+            onSelected: (_) => _selectFilter(item.$1),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildQuickAccess() {
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        userRecentlyPlayed,
+        userLikedSongsList,
+        userOfflineSongs,
+        userLikedPlaylists,
+      ]),
+      builder: (context, _) {
+        final items = <_QuickAccessItem>[
+          if (userLikedSongsList.value.isNotEmpty)
+            _QuickAccessItem(
+              title: context.l10n!.likedSongs,
+              icon: FluentIcons.heart_24_filled,
+              accent: const Color(0xFF6C4DFF),
+              onTap: () => context.go('/library/userSongs/liked'),
+            ),
+          if (userOfflineSongs.value.isNotEmpty)
+            _QuickAccessItem(
+              title: 'Downloads',
+              icon: FluentIcons.arrow_download_24_filled,
+              accent: const Color(0xFF087E8B),
+              onTap: () => context.go('/library/userSongs/offline'),
+            ),
+          for (var i = 0; i < userRecentlyPlayed.value.take(4).length; i++)
+            _QuickAccessItem(
+              title:
+                  userRecentlyPlayed.value[i]['title']?.toString() ?? 'Track',
+              image: _imageFor(userRecentlyPlayed.value[i]),
+              icon: FluentIcons.music_note_2_24_filled,
+              onTap: () => audioHandler.playPlaylistSong(
+                playlist: {
+                  'title': context.l10n!.recentlyPlayed,
+                  'list': userRecentlyPlayed.value,
+                },
+                songIndex: i,
+              ),
+            ),
+          for (final playlist
+              in userLikedPlaylists.value
+                  .where((item) => !isArtistPlaylist(item))
+                  .take(2))
+            _QuickAccessItem(
+              title: playlist['title']?.toString() ?? 'Playlist',
+              image: playlist['image']?.toString(),
+              icon: FluentIcons.text_bullet_list_24_filled,
+              onTap: () => context.push(
+                '/home/playlist/${Uri.encodeComponent(playlist['ytid'].toString())}',
+              ),
+            ),
+        ].take(8).toList();
+
+        if (items.isEmpty) return const SizedBox.shrink();
+        final columns = MediaQuery.sizeOf(context).width >= 720 ? 4 : 2;
+        return Padding(
+          padding: const EdgeInsets.only(top: 4, bottom: 8),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              mainAxisExtent: 62,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+            ),
+            itemCount: items.length,
+            itemBuilder: (context, index) =>
+                _QuickAccessTile(item: items[index]),
+          ),
+        );
+      },
+    );
+  }
+
+  String? _imageFor(dynamic item) {
+    if (item is! Map) return null;
+    return (item['artworkPath'] ??
+            item['image'] ??
+            item['highResImage'] ??
+            item['lowResImage'])
+        ?.toString();
+  }
+
+  Widget _buildExploreCarousel() {
+    final items = switch (_filter) {
+      DiscoveryFilter.podcasts => const [
+        ('Music stories', 'music podcast full episode', 0xFF8D5CF6),
+        ('Comedy', 'comedy podcast full episode', 0xFFEF476F),
+        ('Technology', 'technology podcast 2026', 0xFF118AB2),
+        ('Filipino', 'Filipino podcast full episode', 0xFFF78C6B),
+      ],
+      DiscoveryFilter.live => const [
+        ('Acoustic', 'live acoustic performance', 0xFF2A9D8F),
+        ('Concerts', 'full live concert', 0xFFE76F51),
+        ('Festivals', 'festival live set 2026', 0xFFF4A261),
+        ('OPM live', 'OPM live concert', 0xFF577590),
+      ],
+      _ => const [
+        ('Made for you', 'personalized music mix', 0xFF6C4DFF),
+        ('Charts', 'Philippines top songs 2026', 0xFFE63946),
+        ('New releases', 'new music releases 2026', 0xFF118AB2),
+        ('OPM', 'OPM Filipino music 2026', 0xFFF4A261),
+        ('Chill', 'chill music mix', 0xFF2A9D8F),
+        ('Workout', 'workout music mix', 0xFFEF476F),
+      ],
+    };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SectionHeader(
-          title: 'Discover',
+          title: 'Explore',
           icon: FluentIcons.compass_northwest_24_filled,
         ),
         SizedBox(
-          height: 44,
+          height: 88,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: shortcuts.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
-              final item = shortcuts[index];
-              return ActionChip(
-                avatar: Icon(item.icon, size: 18),
-                label: Text(item.label),
-                onPressed: () => context.go(
-                  '/search?q=${Uri.encodeQueryComponent(item.query)}',
+              final item = items[index];
+              return _ExploreCard(
+                title: item.$1,
+                color: Color(item.$3),
+                onTap: () => context.go(
+                  '/search?q=${Uri.encodeQueryComponent(item.$2)}',
                 ),
               );
             },
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
       ],
     );
   }
 
-  Widget _buildSuggestedPlaylists(
-    double playlistHeight, {
-    bool showOnlyLiked = false,
-  }) {
-    if (showOnlyLiked) {
-      return ValueListenableBuilder<List<Map>>(
-        valueListenable: userLikedPlaylists,
-        builder: (_, likedPlaylists, __) => _buildSuggestedPlaylistsSection(
-          playlistHeight,
-          likedPlaylists
-              .where((playlist) => !isArtistPlaylist(playlist))
-              .take(recommendedCubesNumber)
-              .toList(),
-          showOnlyLiked: true,
-        ),
-      );
-    }
-
-    return AsyncLoader<List<dynamic>>(
-      future: _suggestedPlaylistsFuture,
-      builder: (context, playlists) =>
-          _buildSuggestedPlaylistsSection(playlistHeight, playlists),
-    );
-  }
-
-  Widget _buildSuggestedPlaylistsSection(
-    double playlistHeight,
-    List<dynamic> playlists, {
-    bool showOnlyLiked = false,
-  }) {
-    if (playlists.isEmpty) return const SizedBox.shrink();
-
-    final sectionTitle = showOnlyLiked
-        ? context.l10n!.backToFavorites
-        : context.l10n!.suggestedPlaylists;
-    final itemsNumber = playlists.length.clamp(0, recommendedCubesNumber);
-    final isLargeScreen = MediaQuery.of(context).size.width > 480;
-
-    return Column(
-      children: [
-        SectionHeader(
-          title: sectionTitle,
-          icon: showOnlyLiked
-              ? FluentIcons.heart_24_filled
-              : FluentIcons.list_24_filled,
-        ),
-        ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: playlistHeight),
-          child: isLargeScreen
-              ? _buildHorizontalList(playlists, itemsNumber, playlistHeight)
-              : _buildCarouselView(playlists, itemsNumber, playlistHeight),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHorizontalList(
-    List<dynamic> playlists,
-    int itemCount,
-    double height,
-  ) {
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: itemCount,
-      itemBuilder: (context, index) {
-        final playlist = playlists[index];
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: GestureDetector(
-            onTap: () => context.push('/home/playlist/${playlist['ytid']}'),
-            child: PlaylistCube(playlist, size: height),
-          ),
+  Widget _buildQuickPicksSection() {
+    return FutureBuilder<List>(
+      future: _recommendedSongsFuture,
+      builder: (context, snapshot) {
+        final data = snapshot.data ?? const [];
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            data.isEmpty) {
+          return const SizedBox(height: 220, child: Center(child: Spinner()));
+        }
+        if (data.isEmpty) return const SizedBox.shrink();
+        final songs = data.take(_shelfLimit).toList();
+        return _SongShelfSection(
+          title: 'Made for you',
+          subtitle: 'Based on your likes and listening',
+          icon: FluentIcons.flash_24_filled,
+          songs: songs,
+          cardSize: 164,
+          onPlay: (index) => _playShelf('Made for you', songs, index),
+          onPlayAll: () => _playShelf('Made for you', songs, 0),
         );
       },
     );
   }
 
-  Widget _buildCarouselView(
-    List<dynamic> playlists,
-    int itemCount,
-    double height,
-  ) {
-    return CarouselView.weighted(
-      flexWeights: const <int>[3, 2, 1],
-      itemSnapping: true,
-      onTap: (index) =>
-          context.push('/home/playlist/${playlists[index]['ytid']}'),
-      children: List.generate(itemCount, (index) {
-        return PlaylistCube(playlists[index], size: height * 2);
-      }),
-    );
-  }
-
-  /// How many tracks each artwork shelf shows before it stops.
-  static const int _shelfLimit = 12;
-
-  /// Artwork shelf of the last things played.
-  ///
-  /// Hidden entirely when empty so a fresh install doesn't open on a dead
-  /// section.
   Widget _buildRecentlyPlayedSection() {
     return ValueListenableBuilder<List>(
       valueListenable: userRecentlyPlayed,
-      builder: (context, recentlyPlayed, _) {
-        if (recentlyPlayed.isEmpty) return const SizedBox.shrink();
-
-        final songs = recentlyPlayed.length > _shelfLimit
-            ? recentlyPlayed.sublist(0, _shelfLimit)
-            : recentlyPlayed;
+      builder: (context, recent, _) {
+        if (recent.isEmpty) return const SizedBox.shrink();
+        final songs = recent.take(_shelfLimit).toList();
         final title = context.l10n!.recentlyPlayed;
+        return _SongShelfSection(
+          title: title,
+          subtitle: 'Jump back into your rotation',
+          icon: FluentIcons.history_24_filled,
+          songs: songs,
+          onPlay: (index) => _playShelf(title, songs, index),
+          onPlayAll: () => _playShelf(title, songs, 0),
+        );
+      },
+    );
+  }
 
+  Widget _buildSuggestedPlaylists() {
+    return FutureBuilder<List>(
+      future: _suggestedPlaylistsFuture,
+      builder: (context, snapshot) {
+        final playlists = snapshot.data ?? const [];
+        if (playlists.isEmpty) return const SizedBox.shrink();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SectionHeader(
-              title: title,
-              icon: FluentIcons.history_24_filled,
-              actionButton: IconButton(
-                tooltip: title,
-                onPressed: () => audioHandler.playPlaylistSong(
-                  playlist: {'title': title, 'list': songs},
-                  songIndex: 0,
-                ),
-                icon: Icon(
-                  FluentIcons.play_circle_24_filled,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 30,
-                ),
+              title: context.l10n!.suggestedPlaylists,
+              icon: FluentIcons.collections_24_filled,
+            ),
+            SizedBox(
+              height: 210,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: playlists.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final playlist = playlists[index] as Map;
+                  return _PlaylistHomeCard(
+                    playlist: playlist,
+                    onTap: () => context.push(
+                      '/home/playlist/${Uri.encodeComponent(playlist['ytid'].toString())}',
+                    ),
+                  );
+                },
               ),
             ),
-            SongShelf(
-              songs: songs,
-              onPlay: (index) => audioHandler.playPlaylistSong(
-                playlist: {'title': title, 'list': songs},
-                songIndex: index,
-              ),
-            ),
-            const SizedBox(height: 8),
           ],
         );
       },
     );
   }
 
-  /// Artwork-led entry point into the recommendations, mirroring how the rest
-  /// of the app already presents playlists.
-  Widget _buildQuickPicksSection() {
-    return AsyncLoader<List<dynamic>>(
-      future: _recommendedSongsFuture,
-      loadingWidget: const SizedBox(
-        height: 210,
-        child: Center(child: Spinner()),
-      ),
-      builder: (context, data) {
-        if (data.isEmpty) return const SizedBox.shrink();
-        final songs = data.length > _shelfLimit
-            ? data.sublist(0, _shelfLimit)
-            : data;
-        const title = 'Quick picks';
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionHeader(
-              title: title,
-              icon: FluentIcons.flash_24_filled,
-              actionButton: IconButton(
-                tooltip: title,
-                onPressed: () => audioHandler.playPlaylistSong(
-                  playlist: {'title': title, 'list': songs},
-                  songIndex: 0,
-                ),
-                icon: Icon(
-                  FluentIcons.play_circle_24_filled,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 30,
-                ),
-              ),
-            ),
-            SongShelf(
-              songs: songs,
-              cardSize: 164,
-              onPlay: (index) => audioHandler.playPlaylistSong(
-                playlist: {'title': title, 'list': songs},
-                songIndex: index,
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        );
-      },
+  Widget _buildDiscoveryShelf(DiscoveryShelf shelf) {
+    return _SongShelfSection(
+      key: ValueKey(shelf.id),
+      title: shelf.title,
+      subtitle: shelf.subtitle,
+      icon: FluentIcons.sparkle_24_filled,
+      songs: shelf.songs,
+      onPlay: (index) => _playShelf(shelf.title, shelf.songs, index),
+      onPlayAll: () => _playShelf(shelf.title, shelf.songs, 0),
+      onExplore: () =>
+          context.go('/search?q=${Uri.encodeQueryComponent(shelf.query)}'),
     );
   }
 
-  Widget _buildRecommendedSongsSection() {
-    return AsyncLoader<List<dynamic>>(
-      future: _recommendedSongsFuture,
-      builder: (context, data) {
-        if (data.isEmpty) return const SizedBox.shrink();
-        return _buildRecommendedForYouSection(context, data);
-      },
+  Future<void> _playShelf(String title, List<dynamic> songs, int index) async {
+    if (songs.isEmpty) return;
+    await audioHandler.playPlaylistSong(
+      playlist: {'title': title, 'list': songs},
+      songIndex: index,
     );
   }
 
   Widget _buildCurrentMonthRecapSection() {
     return ValueListenableBuilder<bool>(
       valueListenable: wrappedEnabled,
-      builder: (_, isEnabled, __) {
-        if (!isEnabled) return const SizedBox.shrink();
+      builder: (_, enabled, __) {
+        if (!enabled) return const SizedBox.shrink();
+        final monthKey = listeningStatsMonthKey(DateTime.now());
+        final stats = listeningStatsService.monthStats(monthKey);
+        final songs = listeningStatsService.monthTopSongs(monthKey);
+        final minutes = monthDisplayMinutes(stats);
+        if (minutes <= 0 && songs.isEmpty) return const SizedBox.shrink();
 
-        final currentMonthKey = listeningStatsMonthKey(DateTime.now());
-        final monthStats = listeningStatsService.monthStats(currentMonthKey);
-        final songs = listeningStatsService.monthTopSongs(currentMonthKey);
-        final displayMinutes = monthDisplayMinutes(monthStats);
-        if (displayMinutes <= 0 && songs.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        final previewSongs = songs.take(wrappedShareSongsLimit).toList();
-        final periodLabel = formatMonthPeriodLabel(
-          Localizations.localeOf(context),
-          currentMonthKey,
-        );
-
+        final preview = songs.take(wrappedShareSongsLimit).toList();
         return Column(
           children: [
             SectionHeader(
@@ -413,13 +568,17 @@ class _HomePageState extends State<HomePage> {
               icon: FluentIcons.data_trending_24_filled,
             ),
             ListeningRecapCard(
-              periodLabel: periodLabel,
-              minutes: displayMinutes,
-              songs: previewSongs,
-              onSongTap: (index) => _playRecapSongs(previewSongs, index),
+              periodLabel: formatMonthPeriodLabel(
+                Localizations.localeOf(context),
+                monthKey,
+              ),
+              minutes: minutes,
+              songs: preview,
+              onSongTap: (index) =>
+                  _playShelf(context.l10n!.timeMachine, preview, index),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
+              padding: const EdgeInsets.only(top: 10),
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton.tonalIcon(
@@ -429,62 +588,277 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
           ],
         );
       },
     );
   }
 
-  Future<void> _playRecapSongs(
-    List<Map<String, dynamic>> songs,
-    int index,
-  ) async {
-    if (songs.isEmpty) return;
-    await audioHandler.playPlaylistSong(
-      playlist: {'title': context.l10n!.timeMachine, 'list': songs},
-      songIndex: index,
-    );
-  }
-
-  Widget _buildRecommendedForYouSection(
-    BuildContext context,
-    List<dynamic> data,
-  ) {
-    final recommendedTitle = context.l10n!.recommendedForYou;
-
-    return Column(
-      children: [
-        SectionHeader(
-          title: recommendedTitle,
-          icon: FluentIcons.sparkle_24_filled,
-          actionButton: IconButton(
-            onPressed: () async {
-              await audioHandler.playPlaylistSong(
-                playlist: {'title': recommendedTitle, 'list': data},
-                songIndex: 0,
-              );
-            },
-            icon: Icon(
-              FluentIcons.play_circle_24_filled,
-              color: Theme.of(context).colorScheme.primary,
-              size: 30,
-            ),
+  Widget _buildFeedFooter() {
+    if (_loadingFeed) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 34),
+        child: Center(child: Spinner()),
+      );
+    }
+    if (_feedError) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: FilledButton.tonalIcon(
+            onPressed: _loadMoreFeed,
+            icon: const Icon(FluentIcons.arrow_clockwise_24_regular),
+            label: const Text('Load more'),
           ),
         ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: data.length,
-          padding: commonListViewBottomPadding,
-          itemBuilder: (context, index) {
-            final borderRadius = getItemBorderRadius(index, data.length);
-            return RepaintBoundary(
-              key: listItemKey('home_recommended', index, data[index]),
-              child: SongBar(data[index], true, borderRadius: borderRadius),
-            );
-          },
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Center(
+        child: Text(
+          'Keep scrolling · more music is loading',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 12,
+          ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+class _SongShelfSection extends StatelessWidget {
+  const _SongShelfSection({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.songs,
+    required this.onPlay,
+    required this.onPlayAll,
+    this.onExplore,
+    this.cardSize = 148,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final List<dynamic> songs;
+  final void Function(int index) onPlay;
+  final VoidCallback onPlayAll;
+  final VoidCallback? onExplore;
+  final double cardSize;
+
+  @override
+  Widget build(BuildContext context) {
+    if (songs.isEmpty) return const SizedBox.shrink();
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(
+            title: title,
+            icon: icon,
+            actionButton: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (onExplore != null)
+                  IconButton(
+                    tooltip: 'Explore $title',
+                    onPressed: onExplore,
+                    icon: const Icon(FluentIcons.arrow_right_24_regular),
+                  ),
+                IconButton.filled(
+                  tooltip: 'Play $title',
+                  onPressed: onPlayAll,
+                  icon: const Icon(FluentIcons.play_24_filled),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+            child: Text(
+              subtitle,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 12.5,
+              ),
+            ),
+          ),
+          SongShelf(songs: songs, onPlay: onPlay, cardSize: cardSize),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickAccessItem {
+  const _QuickAccessItem({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+    this.image,
+    this.accent,
+  });
+
+  final String title;
+  final String? image;
+  final IconData icon;
+  final Color? accent;
+  final VoidCallback onTap;
+}
+
+class _QuickAccessTile extends StatelessWidget {
+  const _QuickAccessTile({required this.item});
+
+  final _QuickAccessItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final image = item.image;
+    return Material(
+      color: colorScheme.surfaceContainerHigh.withValues(alpha: 0.86),
+      borderRadius: BorderRadius.circular(8),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: item.onTap,
+        child: Row(
+          children: [
+            SizedBox(
+              width: 62,
+              height: 62,
+              child: image == null || image.isEmpty
+                  ? ColoredBox(
+                      color: item.accent ?? colorScheme.primaryContainer,
+                      child: Icon(item.icon, color: Colors.white, size: 25),
+                    )
+                  : PlaylistArtwork(
+                      playlistArtwork: image,
+                      cubeIcon: item.icon,
+                      size: 62,
+                    ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text(
+                  item.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ExploreCard extends StatelessWidget {
+  const _ExploreCard({
+    required this.title,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String title;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      borderRadius: BorderRadius.circular(14),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          width: 142,
+          child: Stack(
+            children: [
+              Positioned(
+                right: -12,
+                bottom: -18,
+                child: Transform.rotate(
+                  angle: -0.24,
+                  child: Icon(
+                    FluentIcons.music_note_2_24_filled,
+                    size: 74,
+                    color: Colors.white.withValues(alpha: 0.22),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(13),
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaylistHomeCard extends StatelessWidget {
+  const _PlaylistHomeCard({required this.playlist, required this.onTap});
+
+  final Map playlist;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 154,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: PlaylistArtwork(
+                playlistArtwork: playlist['image']?.toString(),
+                playlistTitle: playlist['title']?.toString(),
+                size: 154,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              playlist['title']?.toString() ?? 'Playlist',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: colorScheme.onSurface,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
