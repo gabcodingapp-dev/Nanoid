@@ -5,14 +5,6 @@
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
- *     Nanoid is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 import 'dart:ui';
@@ -20,18 +12,15 @@ import 'dart:ui';
 import 'package:material_ui/material_ui.dart';
 import 'package:nanoid/services/settings_manager.dart';
 
-/// Liquid Glass (Beta).
+/// Nanoid Liquid Glass.
 ///
-/// A translucent surface that blurs and lifts whatever sits behind it, with a
-/// soft specular sheen across the top edge and a hairline rim light. Built only
-/// from [BackdropFilter] and gradients, so there are no new dependencies and no
-/// custom shaders to maintain.
+/// The v2 surface combines backdrop blur, a directional rim, a soft internal
+/// refraction sweep and pointer-following specular light. [Listener] observes
+/// the press without taking gestures away from controls inside the glass.
 ///
-/// Cost note: [BackdropFilter] forces the compositor to read back the layer
-/// underneath, which is why this is opt-in and off by default. It is applied to
-/// small, persistent chrome (the nav bar, the mini player) rather than to
-/// scrolling content, where repeated read-backs would be expensive.
-class LiquidGlass extends StatelessWidget {
+/// Inspired by the interaction quality of SimpMusic's liquid-glass surfaces,
+/// independently implemented with Flutter's built-in compositor APIs.
+class LiquidGlass extends StatefulWidget {
   const LiquidGlass({
     super.key,
     required this.child,
@@ -40,75 +29,201 @@ class LiquidGlass extends StatelessWidget {
     this.tintOpacity = 0.10,
     this.showRim = true,
     this.padding,
+    this.interactive = true,
   });
 
   final Widget child;
   final BorderRadius? borderRadius;
-
-  /// Gaussian sigma for the backdrop blur.
   final double blur;
-
-  /// How much surface tint sits on top of the blur. Higher = more frosted.
   final double tintOpacity;
-
-  /// Draws the hairline rim light that sells the "glass edge" read.
   final bool showRim;
-
   final EdgeInsetsGeometry? padding;
+  final bool interactive;
+
+  @override
+  State<LiquidGlass> createState() => _LiquidGlassState();
+}
+
+class _LiquidGlassState extends State<LiquidGlass> {
+  bool _pressed = false;
+  Alignment _touchAlignment = Alignment.center;
+
+  void _updateTouch(PointerEvent event) {
+    if (!widget.interactive) return;
+    final box = context.findRenderObject();
+    if (box is! RenderBox || box.size.isEmpty) return;
+    final local = box.globalToLocal(event.position);
+    final dx = (local.dx / box.size.width) * 2 - 1;
+    final dy = (local.dy / box.size.height) * 2 - 1;
+    setState(() {
+      _pressed = true;
+      _touchAlignment = Alignment(dx.clamp(-1.0, 1.0), dy.clamp(-1.0, 1.0));
+    });
+  }
+
+  void _release(PointerEvent event) {
+    if (_pressed && mounted) setState(() => _pressed = false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final radius = borderRadius ?? BorderRadius.circular(24);
+    final radius = widget.borderRadius ?? BorderRadius.circular(24);
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceTint = Color.lerp(
+      colorScheme.surface,
+      isDark ? Colors.black : Colors.white,
+      isDark ? 0.24 : 0.38,
+    )!;
 
-    // Light glass picks up white; dark glass picks up the surface tint so it
-    // does not turn milky grey on an OLED background.
-    final sheen = isDark ? Colors.white : Colors.white;
-    final base = isDark
-        ? colorScheme.surface.withValues(alpha: tintOpacity + 0.18)
-        : colorScheme.surface.withValues(alpha: tintOpacity + 0.42);
-
-    return ClipRRect(
+    final content = ClipRRect(
       borderRadius: radius,
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: radius,
-            // Vertical falloff: brighter at the top edge, settling into the
-            // surface tint lower down. This is what reads as depth.
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                sheen.withValues(alpha: isDark ? 0.22 : 0.62),
-                sheen.withValues(alpha: isDark ? 0.06 : 0.24),
-                base,
-              ],
-              stops: const [0, 0.22, 1],
-            ),
-            border: showRim
-                ? Border.all(
-                    color: sheen.withValues(alpha: isDark ? 0.26 : 0.7),
-                    width: 1,
-                  )
-                : null,
-          ),
-          child: padding == null
-              ? child
-              : Padding(padding: padding!, child: child),
+        filter: ImageFilter.blur(
+          sigmaX: widget.blur + (_pressed ? 2 : 0),
+          sigmaY: widget.blur + (_pressed ? 2 : 0),
         ),
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: isDark ? 0.17 : 0.58),
+                    surfaceTint.withValues(
+                      alpha: isDark
+                          ? widget.tintOpacity + 0.20
+                          : widget.tintOpacity + 0.35,
+                    ),
+                    (isDark ? Colors.black : colorScheme.primary).withValues(
+                      alpha: isDark ? 0.16 : 0.055,
+                    ),
+                  ],
+                  stops: const [0, 0.46, 1],
+                ),
+              ),
+              child: widget.padding == null
+                  ? widget.child
+                  : Padding(padding: widget.padding!, child: widget.child),
+            ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _GlassLightPainter(
+                    borderRadius: radius,
+                    isDark: isDark,
+                    showRim: widget.showRim,
+                    pressed: _pressed,
+                    touchAlignment: _touchAlignment,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: _updateTouch,
+      onPointerMove: _updateTouch,
+      onPointerUp: _release,
+      onPointerCancel: _release,
+      child: AnimatedScale(
+        scale: _pressed && widget.interactive ? 1.008 : 1,
+        duration: const Duration(milliseconds: 170),
+        curve: _pressed ? Curves.easeOutCubic : Curves.easeOutBack,
+        child: content,
       ),
     );
   }
 }
 
-/// Wraps [child] in [LiquidGlass] only while the Beta setting is on, and
-/// rebuilds automatically when the user toggles it.
-///
-/// [fallback] receives the same child so callers can keep their existing opaque
-/// styling when the effect is disabled.
+class _GlassLightPainter extends CustomPainter {
+  const _GlassLightPainter({
+    required this.borderRadius,
+    required this.isDark,
+    required this.showRim,
+    required this.pressed,
+    required this.touchAlignment,
+  });
+
+  final BorderRadius borderRadius;
+  final bool isDark;
+  final bool showRim;
+  final bool pressed;
+  final Alignment touchAlignment;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final rect = Offset.zero & size;
+    final rrect = borderRadius.toRRect(rect).deflate(0.6);
+
+    // A diagonal refraction sweep keeps the surface from reading as a flat,
+    // uniformly frosted rectangle.
+    final sweep = Paint()
+      ..shader = LinearGradient(
+        begin: const Alignment(-1, -0.85),
+        end: const Alignment(1, 0.7),
+        colors: [
+          Colors.white.withValues(alpha: isDark ? 0.10 : 0.20),
+          Colors.transparent,
+          Colors.white.withValues(alpha: isDark ? 0.035 : 0.09),
+        ],
+        stops: const [0, 0.48, 1],
+      ).createShader(rect);
+    canvas.drawRRect(rrect, sweep);
+
+    if (pressed) {
+      final glow = Paint()
+        ..blendMode = BlendMode.plus
+        ..shader = RadialGradient(
+          center: touchAlignment,
+          radius: 1.15,
+          colors: [
+            Colors.white.withValues(alpha: isDark ? 0.19 : 0.30),
+            Colors.white.withValues(alpha: 0),
+          ],
+        ).createShader(rect);
+      canvas.drawRRect(rrect, glow);
+    }
+
+    if (showRim) {
+      final rim = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.15
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: isDark ? 0.48 : 0.88),
+            Colors.white.withValues(alpha: isDark ? 0.10 : 0.30),
+            Colors.black.withValues(alpha: isDark ? 0.30 : 0.10),
+            Colors.white.withValues(alpha: isDark ? 0.30 : 0.68),
+          ],
+          stops: const [0, 0.38, 0.72, 1],
+        ).createShader(rect);
+      canvas.drawRRect(rrect, rim);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GlassLightPainter oldDelegate) {
+    return oldDelegate.isDark != isDark ||
+        oldDelegate.showRim != showRim ||
+        oldDelegate.pressed != pressed ||
+        oldDelegate.touchAlignment != touchAlignment ||
+        oldDelegate.borderRadius != borderRadius;
+  }
+}
+
+/// Wraps [child] in [LiquidGlass] only while the Beta setting is on.
 class LiquidGlassSurface extends StatelessWidget {
   const LiquidGlassSurface({
     super.key,
@@ -117,6 +232,7 @@ class LiquidGlassSurface extends StatelessWidget {
     this.borderRadius,
     this.blur = 30,
     this.tintOpacity = 0.10,
+    this.interactive = true,
   });
 
   final Widget child;
@@ -124,6 +240,7 @@ class LiquidGlassSurface extends StatelessWidget {
   final BorderRadius? borderRadius;
   final double blur;
   final double tintOpacity;
+  final bool interactive;
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +252,7 @@ class LiquidGlassSurface extends StatelessWidget {
           borderRadius: borderRadius,
           blur: blur,
           tintOpacity: tintOpacity,
+          interactive: interactive,
           child: child,
         );
       },

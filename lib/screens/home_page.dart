@@ -109,6 +109,7 @@ class _HomePageState extends State<HomePage> {
                 );
               },
             ),
+            _buildDiscoveryShortcuts(),
             _buildQuickPicksSection(),
             _buildRecentlyPlayedSection(),
             _buildSuggestedPlaylists(playlistHeight),
@@ -119,6 +120,65 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDiscoveryShortcuts() {
+    const shortcuts = <({String label, String query, IconData icon})>[
+      (
+        label: 'Moods & genres',
+        query: 'mood music mix',
+        icon: FluentIcons.color_24_regular,
+      ),
+      (
+        label: 'Charts',
+        query: 'global top songs chart',
+        icon: FluentIcons.arrow_trending_24_regular,
+      ),
+      (
+        label: 'OPM',
+        query: 'OPM Filipino music',
+        icon: FluentIcons.music_note_2_24_regular,
+      ),
+      (
+        label: 'Podcasts',
+        query: 'music podcast episodes',
+        icon: FluentIcons.mic_record_24_regular,
+      ),
+      (
+        label: 'New releases',
+        query: 'new music releases',
+        icon: FluentIcons.sparkle_24_regular,
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          title: 'Discover',
+          icon: FluentIcons.compass_northwest_24_filled,
+        ),
+        SizedBox(
+          height: 44,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: shortcuts.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final item = shortcuts[index];
+              return ActionChip(
+                avatar: Icon(item.icon, size: 18),
+                label: Text(item.label),
+                onPressed: () => context.go(
+                  '/search?q=${Uri.encodeQueryComponent(item.query)}',
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 
@@ -271,7 +331,10 @@ class _HomePageState extends State<HomePage> {
   Widget _buildQuickPicksSection() {
     return AsyncLoader<List<dynamic>>(
       future: _recommendedSongsFuture,
-      loadingWidget: const SizedBox(height: 210, child: Center(child: Spinner())),
+      loadingWidget: const SizedBox(
+        height: 210,
+        child: Center(child: Spinner()),
+      ),
       builder: (context, data) {
         if (data.isEmpty) return const SizedBox.shrink();
         final songs = data.length > _shelfLimit

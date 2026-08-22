@@ -31,6 +31,7 @@ import 'package:nanoid/main.dart';
 import 'package:nanoid/services/router_service.dart';
 import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/utilities/app_utils.dart';
+import 'package:nanoid/widgets/now_playing/community_rating_pill.dart';
 import 'package:nanoid/widgets/now_playing/marquee_text_widget.dart';
 import 'package:nanoid/widgets/playback_icon_button.dart';
 import 'package:nanoid/widgets/position_slider.dart';
@@ -114,6 +115,12 @@ class NowPlayingControls extends StatelessWidget {
                 ],
               ),
             ),
+            if (!isCompact &&
+                audioId != null &&
+                audioId.toString().trim().isNotEmpty) ...[
+              CommunityRatingPill(videoId: audioId.toString()),
+              SizedBox(height: spacing),
+            ],
             if (!isCompact) const Spacer(),
             ConstrainedBox(
               constraints: BoxConstraints(

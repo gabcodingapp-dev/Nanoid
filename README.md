@@ -49,6 +49,15 @@
   - **Smart Cache** — lyrics cached per `artist::title` key
   - **Live Progress** — download progress with lyrics fetch indicator
   - **Clean Player** — no ads, no bloat
+- **Nanoid 1.1 feature pack:**
+  - **Moods, Genres, Charts & Podcasts discovery** — shortcuts backed by YouTube search
+  - **Community Ratings** — read-only estimates from Return YouTube Dislike
+  - **Multi-source Lyrics** — LRCLIB and legacy sources, then a labelled YouTube transcript fallback
+  - **Granular SponsorBlock** — choose sponsors, intros, outros, self-promotion, filler and more
+  - **Liquid Glass v2** — directional rim lighting and touch-responsive specular glow
+
+See the honest [SimpMusic feature-parity plan](SIMPMUSIC_FEATURE_PARITY.md) for
+what is already present, what landed in 1.1, and the remaining platform work.
 
 ---
 
@@ -87,6 +96,12 @@ flutter build apk --release
 | **Developer** | **Gab Nikumura** (`gabcodingapp-dev`) |
 | **Package** | `com.gab.nanoid` |
 | **Licence** | GPL-3.0 — see LICENSE and NOTICE |
+| **Feature inspiration** | [SimpMusic](https://github.com/maxrave-dev/SimpMusic) by maxrave-dev and contributors |
+| **Community ratings** | [Return YouTube Dislike](https://returnyoutubedislike.com/) |
+| **Skip segments** | [SponsorBlock](https://sponsor.ajay.app/) |
+
+Nanoid is not affiliated with or endorsed by SimpMusic. The Nanoid 1.1 Flutter
+implementations are maintained in this repository; see `NOTICE` for attribution.
 
 ---
 

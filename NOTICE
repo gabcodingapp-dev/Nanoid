@@ -13,4 +13,23 @@ All Nanoid-specific work -- the branding, icon and splash system, offline
 synced lyrics, the Liquid Glass surface, and the Fluid theme with its Motion
 and Rhythm modes -- is Copyright (C) 2026 Gab Nikumura.
 
+Feature inspiration and acknowledgement
+----------------------------------------
+SimpMusic, Copyright (C) maxrave-dev and contributors, is a GPL-3.0 open-source
+YouTube Music client: https://github.com/maxrave-dev/SimpMusic
+
+Nanoid's 1.1 feature pack was informed by SimpMusic's public feature set,
+including community ratings, transcript fallback, granular SponsorBlock
+controls, discovery shortcuts, and interactive liquid-glass surfaces. Nanoid's
+Flutter implementations are maintained in this repository. Nanoid is not
+affiliated with or endorsed by SimpMusic.
+
+Community services
+------------------
+Return YouTube Dislike provides read-only community rating estimates:
+https://returnyoutubedislike.com/
+
+SponsorBlock provides community-maintained skip segments:
+https://sponsor.ajay.app/
+
 Source: https://github.com/gabcodingapp-dev/Nanoid

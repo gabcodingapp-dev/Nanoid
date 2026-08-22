@@ -21,6 +21,8 @@ import 'package:nanoid/main.dart';
 import 'package:nanoid/models/lyrics.dart';
 import 'package:nanoid/services/io_service.dart';
 import 'package:nanoid/services/lyrics_manager.dart';
+import 'package:nanoid/services/settings_manager.dart';
+import 'package:nanoid/services/youtube_transcript_service.dart';
 
 /// Persists lyrics next to downloaded audio so they are readable with no
 /// network connection.
@@ -104,10 +106,10 @@ class OfflineLyricsService {
 
     try {
       if (!force && await hasResolved(songId)) {
-        return read(songId);
+        return await read(songId);
       }
 
-      final lyrics = await LyricsManager()
+      var lyrics = await LyricsManager()
           .fetchStructuredLyrics(
             artist: artist,
             title: title,
@@ -115,6 +117,12 @@ class OfflineLyricsService {
             duration: duration,
           )
           .timeout(fetchBudget, onTimeout: () => null);
+
+      if (lyrics == null && youtubeTranscriptFallbackEnabled.value) {
+        lyrics = await YouTubeTranscriptService()
+            .fetch(songId, preferredLanguage: languageSetting.languageCode)
+            .timeout(fetchBudget, onTimeout: () => null);
+      }
 
       await _write(songId, lyrics);
       return lyrics;

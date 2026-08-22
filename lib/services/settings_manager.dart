@@ -163,6 +163,59 @@ final sponsorBlockSupport = ValueNotifier<bool>(
   Hive.box('settings').get('sponsorBlockSupport', defaultValue: false),
 );
 
+/// SponsorBlock segment kinds Nanoid can skip. Point-of-interest highlights
+/// are intentionally excluded because they mark a moment rather than a range.
+const Map<String, String> sponsorBlockCategoryLabels = {
+  'sponsor': 'Sponsors',
+  'selfpromo': 'Self promotion',
+  'interaction': 'Interaction reminders',
+  'intro': 'Intros',
+  'outro': 'Outros',
+  'preview': 'Previews / recaps',
+  'music_offtopic': 'Off-topic music sections',
+  'filler': 'Filler',
+};
+
+Set<String> _readSponsorBlockCategories() {
+  final stored = Hive.box('settings').get(
+    'sponsorBlockCategories',
+    defaultValue: const <dynamic>[
+      'sponsor',
+      'selfpromo',
+      'interaction',
+      'intro',
+      'outro',
+      'music_offtopic',
+    ],
+  );
+  if (stored is! List) return {'sponsor'};
+  final supported = sponsorBlockCategoryLabels.keys.toSet();
+  final selected = stored.map((value) => value.toString()).toSet()
+    ..removeWhere((value) => !supported.contains(value));
+  return selected.isEmpty ? {'sponsor'} : selected;
+}
+
+final sponsorBlockCategories = ValueNotifier<Set<String>>(
+  _readSponsorBlockCategories(),
+);
+
+String get sponsorBlockCategorySignature {
+  final values = sponsorBlockCategories.value.toList()..sort();
+  return values.join(',');
+}
+
+/// Show read-only community like/dislike estimates in Now Playing.
+final communityRatingsEnabled = ValueNotifier<bool>(
+  Hive.box('settings').get('communityRatingsEnabled', defaultValue: true),
+);
+
+/// Use a video's caption track only when dedicated lyrics providers have no
+/// result. Captions are clearly labelled as a YouTube transcript in the player.
+final youtubeTranscriptFallbackEnabled = ValueNotifier<bool>(
+  Hive.box('settings')
+      .get('youtubeTranscriptFallbackEnabled', defaultValue: true),
+);
+
 final externalRecommendations = ValueNotifier<bool>(
   Hive.box('settings').get('externalRecommendations', defaultValue: false),
 );
@@ -251,6 +304,15 @@ void reloadSettingsFromStorage() {
   sponsorBlockSupport.value = settings.get(
     'sponsorBlockSupport',
     defaultValue: false,
+  );
+  sponsorBlockCategories.value = _readSponsorBlockCategories();
+  communityRatingsEnabled.value = settings.get(
+    'communityRatingsEnabled',
+    defaultValue: true,
+  );
+  youtubeTranscriptFallbackEnabled.value = settings.get(
+    'youtubeTranscriptFallbackEnabled',
+    defaultValue: true,
   );
   externalRecommendations.value = settings.get(
     'externalRecommendations',

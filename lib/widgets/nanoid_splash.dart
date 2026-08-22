@@ -132,7 +132,6 @@ class _NanoidSplashState extends State<NanoidSplash>
                                     'assets/branding/nanoid_mark.png',
                                     width: 118,
                                     height: 118,
-                                    filterQuality: FilterQuality.medium,
                                   ),
                                 ),
                               ),

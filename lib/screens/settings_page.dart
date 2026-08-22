@@ -30,11 +30,11 @@ import 'package:nanoid/main.dart';
 import 'package:nanoid/screens/search_page.dart';
 import 'package:nanoid/services/common_services.dart';
 import 'package:nanoid/services/data_manager.dart';
+import 'package:nanoid/services/listenbrainz_service.dart';
 import 'package:nanoid/services/listening_stats_service.dart';
 import 'package:nanoid/services/playlist_download_service.dart';
 import 'package:nanoid/services/playlists_manager.dart';
 import 'package:nanoid/services/router_service.dart';
-import 'package:nanoid/services/listenbrainz_service.dart';
 import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/services/update_manager.dart';
 import 'package:nanoid/theme/app_colors.dart';
@@ -42,7 +42,6 @@ import 'package:nanoid/theme/app_themes.dart';
 import 'package:nanoid/utilities/flutter_bottom_sheet.dart';
 import 'package:nanoid/utilities/flutter_toast.dart';
 import 'package:nanoid/utilities/language_utils.dart';
-import 'package:nanoid/utilities/url_launcher.dart';
 import 'package:nanoid/widgets/bottom_sheet_bar.dart';
 import 'package:nanoid/widgets/confirmation_dialog.dart';
 import 'package:nanoid/widgets/custom_bar.dart';
@@ -301,8 +300,7 @@ class SettingsPage extends StatelessWidget {
                   builder: (_, value, __) => CustomBar(
                     'Fluid Motion (Beta)',
                     FluentIcons.phone_24_regular,
-                    description:
-                        'The backdrop leans as you tilt the device.',
+                    description: 'The backdrop leans as you tilt the device.',
                     trailing: Switch(
                       value: value,
                       onChanged: (v) => _toggleFluidGyro(context, v),
@@ -452,13 +450,56 @@ class SettingsPage extends StatelessWidget {
             return CustomBar(
               'SponsorBlock',
               FluentIcons.cut_24_regular,
-              description: context.l10n!.sponsorBlockDescription,
+              description: value
+                  ? '${sponsorBlockCategories.value.length} segment types enabled. Tap to choose.'
+                  : context.l10n!.sponsorBlockDescription,
+              onTap: value ? () => _showSponsorBlockCategories(context) : null,
               trailing: Switch(
                 value: value,
                 onChanged: (value) => _toggleSponsorBlock(context, value),
               ),
             );
           },
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: communityRatingsEnabled,
+          builder: (_, value, __) => CustomBar(
+            'Community ratings',
+            FluentIcons.thumb_dislike_24_regular,
+            description: 'Show estimated likes and dislikes from Return YouTube Dislike.',
+            trailing: Switch(
+              value: value,
+              onChanged: (enabled) {
+                addOrUpdateData<bool>(
+                  'settings',
+                  'communityRatingsEnabled',
+                  enabled,
+                );
+                communityRatingsEnabled.value = enabled;
+                showToast(context, context.l10n!.settingChangedMsg);
+              },
+            ),
+          ),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: youtubeTranscriptFallbackEnabled,
+          builder: (_, value, __) => CustomBar(
+            'YouTube transcript fallback',
+            FluentIcons.text_quote_24_regular,
+            description: 'Use synced video captions only when dedicated lyrics sources have no result.',
+            trailing: Switch(
+              value: value,
+              onChanged: (enabled) {
+                addOrUpdateData<bool>(
+                  'settings',
+                  'youtubeTranscriptFallbackEnabled',
+                  enabled,
+                );
+                youtubeTranscriptFallbackEnabled.value = enabled;
+                showToast(context, context.l10n!.settingChangedMsg);
+              },
+            ),
+          ),
         ),
         ValueListenableBuilder<bool>(
           valueListenable: playNextSongAutomatically,
@@ -923,7 +964,11 @@ class SettingsPage extends StatelessWidget {
                 if (context.mounted) showToast(context, 'Invalid token');
                 return;
               }
-              addOrUpdateData<String>('settings', 'listenBrainzToken', token);
+              await addOrUpdateData<String>(
+                'settings',
+                'listenBrainzToken',
+                token,
+              );
               listenBrainzToken.value = token;
               if (context.mounted) showToast(context, 'Connected as $user');
             },
@@ -1065,6 +1110,90 @@ class SettingsPage extends StatelessWidget {
     NavigationManager.refreshRouter();
 
     showToast(context, context.l10n!.settingChangedMsg);
+  }
+
+  Future<void> _showSponsorBlockCategories(BuildContext context) async {
+    var selected = Set<String>.from(sponsorBlockCategories.value);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                  child: Text(
+                    'Segments to skip',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 440),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        for (final entry in sponsorBlockCategoryLabels.entries)
+                          CheckboxListTile(
+                            value: selected.contains(entry.key),
+                            title: Text(entry.value),
+                            controlAffinity: ListTileControlAffinity.trailing,
+                            onChanged: (checked) {
+                              final next = Set<String>.from(selected);
+                              if (checked ?? false) {
+                                next.add(entry.key);
+                              } else if (next.length > 1) {
+                                next.remove(entry.key);
+                              } else {
+                                showToast(
+                                  context,
+                                  'Keep at least one segment type enabled.',
+                                );
+                                return;
+                              }
+                              setSheetState(() => selected = next);
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      child: Text(context.l10n!.cancel),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () {
+                        final values = selected.toList()..sort();
+                        addOrUpdateData<List<String>>(
+                          'settings',
+                          'sponsorBlockCategories',
+                          values,
+                        );
+                        sponsorBlockCategories.value = Set<String>.from(values);
+                        Navigator.pop(sheetContext);
+                        showToast(context, context.l10n!.settingChangedMsg);
+                      },
+                      child: const Text('Save'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _toggleSponsorBlock(BuildContext context, bool value) {

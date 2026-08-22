@@ -1468,7 +1468,7 @@ class NanoidAudioHandler extends BaseAudioHandler {
 
   /// Target volume the user's fades return to. Kept separate from
   /// audioPlayer.volume because a fade transiently drives that to 0.
-  double _baseVolume = 1;
+  final double _baseVolume = 1;
 
   Future<void> _fadeVolume(double from, double to, Duration duration) async {
     if (duration <= Duration.zero) {
@@ -1617,8 +1617,12 @@ class NanoidAudioHandler extends BaseAudioHandler {
           .map(cloneMap)
           .toList();
       final box = Hive.box('userNoBackup');
-      box.put('savedQueue', songs);
-      box.put('savedQueueIndex', _currentQueueIndex);
+      unawaited(
+        Future.wait([
+          box.put('savedQueue', songs),
+          box.put('savedQueueIndex', _currentQueueIndex),
+        ]),
+      );
     } catch (e, stackTrace) {
       logger.log('Error persisting queue', error: e, stackTrace: stackTrace);
     }

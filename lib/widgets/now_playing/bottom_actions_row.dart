@@ -25,13 +25,14 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:nanoid/extensions/l10n.dart';
 import 'package:nanoid/main.dart';
-import 'package:nanoid/widgets/playback_speed_sheet.dart';
 import 'package:nanoid/services/common_services.dart';
 import 'package:nanoid/services/settings_manager.dart';
 import 'package:nanoid/utilities/flutter_bottom_sheet.dart';
 import 'package:nanoid/utilities/flutter_toast.dart';
 import 'package:nanoid/utilities/mediaitem.dart';
 import 'package:nanoid/utilities/playlist_dialogs.dart';
+import 'package:nanoid/widgets/liquid_glass.dart';
+import 'package:nanoid/widgets/playback_speed_sheet.dart';
 import 'package:nanoid/widgets/queue_list_view.dart';
 
 class BottomActionsRow extends StatefulWidget {
@@ -228,15 +229,24 @@ class _BottomActionsRowState extends State<BottomActionsRow> {
           ],
         ];
 
-        return Container(
+        final actionRow = Padding(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(20),
-          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: actions,
+          ),
+        );
+
+        return LiquidGlassSurface(
+          borderRadius: BorderRadius.circular(20),
+          blur: 24,
+          child: actionRow,
+          fallback: (context, child) => DecoratedBox(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: child,
           ),
         );
       },

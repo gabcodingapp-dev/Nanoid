@@ -31,6 +31,8 @@ import 'package:nanoid/widgets/mini_player_bottom_space.dart';
 const String nanoidRepoUrl = 'https://github.com/gabcodingapp-dev/Nanoid';
 const String nanoidReleasesUrl = '$nanoidRepoUrl/releases';
 const String nanoidIssuesUrl = '$nanoidRepoUrl/issues';
+const String simpMusicRepoUrl = 'https://github.com/maxrave-dev/SimpMusic';
+const String returnYouTubeDislikeUrl = 'https://returnyoutubedislike.com/';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -131,6 +133,20 @@ class AboutPage extends StatelessWidget {
               title: 'Report an issue',
               subtitle: 'Bugs and feature requests',
               onTap: () => launchURL(Uri.parse(nanoidIssuesUrl)),
+            ),
+            const SizedBox(height: 8),
+            _LinkTile(
+              icon: FluentIcons.sparkle_24_filled,
+              title: 'Feature inspiration: SimpMusic',
+              subtitle: 'GPL-3.0 project by maxrave-dev · no affiliation',
+              onTap: () => launchURL(Uri.parse(simpMusicRepoUrl)),
+            ),
+            const SizedBox(height: 8),
+            _LinkTile(
+              icon: FluentIcons.thumb_dislike_24_filled,
+              title: 'Return YouTube Dislike',
+              subtitle: 'Community rating estimates',
+              onTap: () => launchURL(Uri.parse(returnYouTubeDislikeUrl)),
             ),
             const SizedBox(height: 26),
             // GPL-3.0 requires that modified versions carry a notice stating

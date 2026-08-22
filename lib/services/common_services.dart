@@ -36,6 +36,7 @@ import 'package:nanoid/services/nanoid/offline_lyrics_service.dart';
 import 'package:nanoid/services/playlists_manager.dart';
 import 'package:nanoid/services/proxy_manager.dart';
 import 'package:nanoid/services/settings_manager.dart';
+import 'package:nanoid/services/youtube_transcript_service.dart';
 import 'package:nanoid/utilities/app_utils.dart';
 import 'package:nanoid/utilities/formatter.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -494,6 +495,9 @@ Future<List<String>> getSearchSuggestions(String query) async {
 // fetch" (e.g. the offline cache, which must not persist a false negative)
 // can do so.
 Future<List<Map<String, int>>> _fetchSkipSegments(String id) async {
+  final categories = sponsorBlockCategories.value.toList()..sort();
+  if (categories.isEmpty) return [];
+
   final res = await ProxyManager().getProxiedResponse(
     Uri(
       scheme: 'https',
@@ -501,14 +505,7 @@ Future<List<Map<String, int>>> _fetchSkipSegments(String id) async {
       path: '/api/skipSegments',
       queryParameters: {
         'videoID': id,
-        'category': [
-          'sponsor',
-          'selfpromo',
-          'interaction',
-          'intro',
-          'outro',
-          'music_offtopic',
-        ],
+        'category': categories,
         'actionType': 'skip',
       },
     ),
@@ -746,12 +743,24 @@ Future<Lyrics?> getSongLyrics({
   // 2. live lookup
   if (offlineMode.value) return null;
 
-  final fetched = await LyricsManager().fetchStructuredLyrics(
+  var fetched = await LyricsManager().fetchStructuredLyrics(
     artist: artist,
     title: title,
     album: album,
     duration: duration,
   );
+
+  // SimpMusic-inspired fallback: if purpose-built lyrics sources have no
+  // result, use the video's caption track and keep it clearly attributed.
+  if (fetched == null &&
+      youtubeTranscriptFallbackEnabled.value &&
+      songId != null &&
+      songId.isNotEmpty) {
+    fetched = await YouTubeTranscriptService().fetch(
+      songId,
+      preferredLanguage: languageSetting.languageCode,
+    );
+  }
   if (fetched == null) return null;
 
   final normalised = fetched.isSynced
@@ -1006,7 +1015,12 @@ Future<T> _sponsorSerialCall<T>(Future<T> Function() action) {
 /// is never fetched again.
 Future<void> cacheSponsorBlockSegments(String ytid) async {
   try {
-    if (getOfflineSongByYtid(ytid)['sponsorSegments'] != null) return;
+    final offlineSong = getOfflineSongByYtid(ytid);
+    if (offlineSong['sponsorSegments'] != null &&
+        offlineSong['sponsorSegmentsCategories'] ==
+            sponsorBlockCategorySignature) {
+      return;
+    }
 
     // Two attempts, spaced out by the queue above; a failure stores nothing so
     // it is not mistaken for a confirmed "no segments", and is looked up again
@@ -1043,6 +1057,7 @@ Future<void> _storeSponsorBlockSegments(
   updatedOfflineSongs[index] = {
     ...Map<String, dynamic>.from(updatedOfflineSongs[index] as Map),
     'sponsorSegments': segments,
+    'sponsorSegmentsCategories': sponsorBlockCategorySignature,
   };
   userOfflineSongs.value = updatedOfflineSongs;
   await addOrUpdateData<List>(
@@ -1055,7 +1070,12 @@ Future<void> _storeSponsorBlockSegments(
 /// The stored segments of a downloaded song, or null when it has none stored
 /// yet. An empty list means the song was looked up and has no segments.
 List<Map<String, int>>? getCachedSponsorBlockSegments(String ytid) {
-  final stored = getOfflineSongByYtid(ytid)['sponsorSegments'];
+  final offlineSong = getOfflineSongByYtid(ytid);
+  if (offlineSong['sponsorSegmentsCategories'] !=
+      sponsorBlockCategorySignature) {
+    return null;
+  }
+  final stored = offlineSong['sponsorSegments'];
   if (stored is! List) return null;
   return [for (final segment in stored) Map<String, int>.from(segment as Map)];
 }

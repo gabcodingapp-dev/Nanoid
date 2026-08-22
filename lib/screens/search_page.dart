@@ -48,7 +48,10 @@ import 'package:nanoid/widgets/section_title.dart';
 import 'package:nanoid/widgets/song_bar.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
+  const SearchPage({super.key, this.initialQuery});
+
+  /// Optional deep-link query used by Home discovery shortcuts.
+  final String? initialQuery;
 
   @override
   _SearchPageState createState() => _SearchPageState();
@@ -84,6 +87,17 @@ class _SearchPageState extends State<SearchPage> {
   Timer? _debounce;
   int _latestSuggestionRequest = 0;
   int _latestSearchRequest = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialQuery = widget.initialQuery?.trim();
+    if (initialQuery != null && initialQuery.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_submitSearch(initialQuery));
+      });
+    }
+  }
 
   Future<void> _submitSearch([String? query]) async {
     if (query != null) {
@@ -286,6 +300,8 @@ class _SearchPageState extends State<SearchPage> {
                             'history-${_suggestionsList.length}-${_searchBar.text}-${searchHistory.length}',
                           ),
                           children: [
+                            if (_searchBar.text.trim().isEmpty)
+                              _buildExploreSection(context),
                             for (int index = 0; index < items.length; index++)
                               Builder(
                                 builder: (context) {
@@ -337,6 +353,124 @@ class _SearchPageState extends State<SearchPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildExploreSection(BuildContext context) {
+    const moodsAndGenres = <({String label, String query, IconData icon})>[
+      (
+        label: 'Pop',
+        query: 'pop music hits',
+        icon: FluentIcons.music_note_2_24_regular,
+      ),
+      (
+        label: 'Hip-Hop',
+        query: 'hip hop music hits',
+        icon: FluentIcons.mic_24_regular,
+      ),
+      (label: 'R&B', query: 'r&b music', icon: FluentIcons.heart_24_regular),
+      (
+        label: 'Rock',
+        query: 'rock music hits',
+        icon: FluentIcons.flash_24_regular,
+      ),
+      (
+        label: 'Electronic',
+        query: 'electronic dance music',
+        icon: FluentIcons.pulse_24_regular,
+      ),
+      (
+        label: 'OPM',
+        query: 'OPM Filipino music',
+        icon: FluentIcons.music_note_1_24_regular,
+      ),
+      (
+        label: 'Chill',
+        query: 'chill music mix',
+        icon: FluentIcons.weather_moon_24_regular,
+      ),
+      (
+        label: 'Workout',
+        query: 'workout music mix',
+        icon: FluentIcons.dumbbell_24_regular,
+      ),
+      (
+        label: 'Focus',
+        query: 'focus music',
+        icon: FluentIcons.brain_circuit_24_regular,
+      ),
+      (
+        label: 'Sleep',
+        query: 'sleep music',
+        icon: FluentIcons.sleep_24_regular,
+      ),
+    ];
+    const more = <({String label, String query, IconData icon})>[
+      (
+        label: 'Global charts',
+        query: 'global top songs chart',
+        icon: FluentIcons.arrow_trending_24_regular,
+      ),
+      (
+        label: 'Philippines charts',
+        query: 'Philippines top songs chart',
+        icon: FluentIcons.top_speed_24_regular,
+      ),
+      (
+        label: 'Music podcasts',
+        query: 'music podcast episodes',
+        icon: FluentIcons.mic_record_24_regular,
+      ),
+      (
+        label: 'Live performances',
+        query: 'live music performance',
+        icon: FluentIcons.live_24_regular,
+      ),
+      (
+        label: 'New releases',
+        query: 'new music releases',
+        icon: FluentIcons.sparkle_24_regular,
+      ),
+    ];
+
+    Widget shelf(
+      String title,
+      List<({String label, String query, IconData icon})> items,
+    ) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final item in items)
+                ActionChip(
+                  avatar: Icon(item.icon, size: 18),
+                  label: Text(item.label),
+                  onPressed: () => _submitSearch(item.query),
+                ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        shelf('Moods & genres', moodsAndGenres),
+        shelf('Discover more', more),
+        const SizedBox(height: 12),
+      ],
     );
   }
 

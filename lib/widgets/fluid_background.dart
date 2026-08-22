@@ -123,7 +123,7 @@ class _FluidPainter extends CustomPainter {
   final double intensity;
 
   static const List<_Blob> _blobs = [
-    _Blob(0.24, 0.20, 0.62, 1.0, 0.00),
+    _Blob(0.24, 0.20, 0.62, 1, 0),
     _Blob(0.78, 0.32, 0.52, 0.7, 1.30),
     _Blob(0.38, 0.78, 0.58, 0.85, 2.60),
     _Blob(0.86, 0.86, 0.44, 1.25, 4.10),
