@@ -1,79 +1,89 @@
-name: Test, Build and Release Fdroid apk
+name: Test, Build and Release F-Droid APK
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - master
+    branches: [master]
 
-env:
-  PROPERTIES_PATH: './android/key.properties'
+permissions:
+  contents: write
 
 jobs:
   build:
     name: Build APK
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'Update:')
     runs-on: ubuntu-latest
-    if: "contains(github.event.head_commit.message, 'Update:')"
 
     steps:
       - uses: actions/checkout@v5
 
-
-      # Extract version from commit message
-      - name: Extract version
-        id: extract_version
+      - name: Read version from pubspec
+        id: version
+        shell: bash
         run: |
-          version=$(echo ${{ github.event.head_commit.message }} | grep -oP '(?<=Update: v)\d+\.\d+\.\d+')
-          echo "version=${version}" >> $GITHUB_OUTPUT
+          version="$(sed -nE 's/^version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' pubspec.yaml)"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      # Setup Java environment in order to build the Android app.
       - uses: actions/setup-java@v5
         with:
-          distribution: 'zulu'
-          java-version: '17.x'
+          distribution: zulu
+          java-version: '17'
 
-      # Gradle cache for faster builds
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
       - uses: actions/cache@v5
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
 
-      # Setup the flutter environment.
-      - run: |
-          pip install -U yq
-          echo "FLUTTER_VERSION=$(yq -r .environment.flutter pubspec.yaml | sed 's/\^//g')" >> $GITHUB_ENV
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          flutter-version: "${{ env.FLUTTER_VERSION }}"
+      - name: Prepare release signing when configured
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          LEGACY_KEYSTORE_B64: ${{ secrets.KEYSTORE2 }}
+          LEGACY_KEY_PASSWORD: ${{ secrets.KEY_STORE }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 --decode > android/key.jks
+            key_password="$KEY_PASSWORD"
+            store_password="$STORE_PASSWORD"
+          elif [ -n "$LEGACY_KEYSTORE_B64" ]; then
+            printf '%s' "$LEGACY_KEYSTORE_B64" | base64 --decode > android/key.jks
+            key_password="$LEGACY_KEY_PASSWORD"
+            store_password="$KEY_PASSWORD"
+          else
+            echo 'No release keystore configured; Gradle will use the debug key.'
+            exit 0
+          fi
+          {
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$key_password"
+            echo "storePassword=$store_password"
+          } > android/key.properties
 
-      #
-      - run: |
-          echo keyPassword=\${{ secrets.KEY_STORE }} > ${{env.PROPERTIES_PATH}}
-          echo storePassword=\${{ secrets.KEY_PASSWORD }} >> ${{env.PROPERTIES_PATH}}
-          echo keyAlias=\${{ secrets.KEY_ALIAS }} >> ${{env.PROPERTIES_PATH}}
-      #
-      - run: echo "${{ secrets.KEYSTORE2 }}" | base64 --decode > android/app/key.jks
-
-      # Get flutter dependencies.
       - run: flutter pub get
-      # # Check for any formatting issues in the code.
-      # - run: dart format --set-exit-if-changed .
-      # Statically analyze the Dart code for any errors.
-      - run: flutter analyze .
-      # Build universal apk.
-      - run: flutter build apk --release --flavor fdroid -t lib/main_fdroid.dart
-      # Release universal Fdroid apk.
-      - uses: svenstaro/upload-release-action@v2
+      - run: flutter analyze
+      - run: flutter test --no-pub
+
+      - name: Build F-Droid APK
+        run: flutter build apk --release --flavor fdroid -t lib/main_fdroid.dart --no-pub
+
+      - name: Release F-Droid APK
+        uses: svenstaro/upload-release-action@v2
         with:
-          repo_name: gabcodingapp-dev/Nanoid
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: build/app/outputs/flutter-apk/app-fdroid-release.apk
           asset_name: Nanoid-fdroid.apk
-          tag: ${{ steps.extract_version.outputs.version }}
+          tag: v${{ steps.version.outputs.version }}
           prerelease: false
           overwrite: true
